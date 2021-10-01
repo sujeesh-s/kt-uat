@@ -1,0 +1,21 @@
+name: QA env
+
+on: 
+  push:
+    branches: [ qa ]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: executing remote ssh commands using ssh key
+      uses: appleboy/ssh-action@master
+      with:
+        host: qa-kt.estrradoweb.com
+        username: qaktestrradoweb
+        key: ${{ secrets.QA_SECRET }}
+        port: 22
+        server-dir: /public_html/
