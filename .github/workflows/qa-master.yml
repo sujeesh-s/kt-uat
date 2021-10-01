@@ -18,4 +18,4 @@ jobs:
         username: qaktestrradoweb
         key: ${{ secrets.QA_SECRET }}
         port: 22
-        TARGET: /public_html/
+        
