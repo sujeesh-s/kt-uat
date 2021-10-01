@@ -19,7 +19,7 @@ jobs:
         key: ${{ secrets.QA_SECRET }}
         script: |
             cd public_html
-            git pull origin master
+            git pull origin qa
 
         
         
