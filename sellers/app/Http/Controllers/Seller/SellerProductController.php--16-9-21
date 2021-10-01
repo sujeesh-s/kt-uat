@@ -1,0 +1,478 @@
+<?php
+
+namespace App\Http\Controllers\Seller;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Validation\Rule;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+// use Intervention\Image\Facades\Image;
+
+use App\Models\Store;
+use App\Models\Category;
+use App\Models\Subcategory;
+use App\Models\Brand;
+use App\Models\Seller;
+use App\Models\SellerInfo;
+use App\Models\Product;
+use App\Models\Tax;
+use App\Models\AdminProduct;
+use App\Models\ProductType;
+use App\Models\PrdPrice;
+use App\Models\PrdImage;
+use App\Models\PrdStock;
+use App\Models\Language;
+use App\Models\CmsContent;
+use App\Models\PrdAttribute;
+use App\Models\PrdAttributeValue;
+use App\Models\AssignedAttribute;
+use App\Models\AssociatProduct;
+use App\Models\PrdAssignedTag;
+use App\Models\RelatedProduct;
+use App\Models\AssConfigAttribute;
+use App\Models\PrdOffer;
+use App\Models\PrdReview;
+use App\Models\PrdImports;
+use App\Imports\ProductImport;
+use Maatwebsite\Excel\Facades\Excel;
+
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
+
+use Validator;
+use Session;
+
+class SellerProductController extends Controller{
+     public function __construct()
+    {
+        $this->middleware('auth:seller');
+    }
+    public function products()
+    { 
+
+        $data['title']              =   'Seller Products';
+        $data['menuGroup']          =   'sellerGroup';
+        $data['menu']               =   'product';
+        $data['products']           =   Product::where("seller_id",auth()->user()->id)->where('is_deleted',0)->orderBy('id','desc')->get();
+        $data['sellerinfo']= SellerInfo::where('is_approved',1)->where("seller_id",auth()->user()->id)->where('is_deleted',0)->first();
+        $data['sellers']            =   getDropdownData(SellerInfo::where('is_approved',1)->where('is_deleted',0)->get(),'seller_id','fname');
+        $data['categories']         =   getDropdownData(Category::where('is_deleted',0)->get(),'category_id','cat_name');
+        // dd($data);
+        return view('seller.my_products.list',$data);
+    }
+    
+    function product($id=0,$sellerId=0,$type='',$lang=''){
+
+        $data['title']              =   'Add Product'; $catId = 0; $data['seller'] = false;
+        $data['menuGroup']          =   'sellerGroup';
+        $data['menu']               =   'product';
+        $sellerId                   =   auth()->user()->id;
+        $product                    =   Product::where('id',$id)->first();
+        if($id>0){ if($product)     {   
+            $catId                  =   $product->category_id; 
+            $configAttrs            =   $this->getConficAttrPrds($id);
+            if($configAttrs){
+                $data['attrs']      =   $configAttrs['attrs'];
+                $data['assPrds']    =   $this->getAssosiProducts($configAttrs['attrIds'],$sellerId,1);
+            }else{ $data['attrs']   =   $data['assPrds'] = []; }
+            $data['assAssoPrdIds']  =   $this->getAssignedAssosiProducts($id);
+        } }
+        if($lang    >   0)          {   $data['langId'] =   $lang; }else{ $data['langId'] = Language::where('is_active',1)->where('is_deleted',0)->first()->id; }
+        if($type == 'view')         {   $title = 'View Product'; }else if($id > 0){ $title = 'Edit Product'; }else{ $title = 'Add Product'; }
+        if($type == 'add')          {   $title = 'Add Admin Product'; }
+        $data['title']              =   $title; 
+        $data['product']            =   $product;
+        if($type                    ==  'new'){ $data['title']   =   'View Product Detail'; }
+        $data['categories']         =   getDropdownData(Category::where('is_deleted',0)->get(),'category_id','cat_name');
+        $data['sub_cats']           =   getDropdownData(Subcategory::where('is_deleted',0)->get(),'subcategory_id','subcategory_name');
+        $data['brands']             =   getDropdownCmsData(Brand::where('is_active',1)->where('is_deleted',0)->get(),'id','brand_name_cid');
+        $data['taxes']              =   getDropdownCmsData(Tax::where('is_active',1)->where('is_deleted',0)->get(),'id','tax_name_cid');
+        $data['languages']          =   getDropdownData(Language::where('is_active',1)->where('is_deleted',0)->get(),'id','glo_lang_name');
+        if($sellerId                >   0){ $data['seller'] = SellerInfo::where('seller_id',$sellerId)->first(); }
+        $adminPrdIds                =   $this->getAddedAdminPrdIds($sellerId);
+        $data['adminProducts']      =   getDropdownData(AdminProduct::where('is_active',1)->whereNotIn('id',$adminPrdIds)->where('is_deleted',0)->get(),'id','name');
+        $data['attributes']         =   $this->getAttributes();
+        $data['prdTypes']           =   getDropdownData(ProductType::where('is_deleted',0)->get(),'id','type_name');
+        $data['configAttrs']        =   PrdAttribute::where('configur',1)->where('is_active',1)->where('is_deleted',0)->get(['id','name']);
+        if($type == 'add'){ return view('admin_product.details',$data); }
+        if($type == 'new'){ return view('seller.my_products.details',$data); }
+        if($type == 'view')     { 
+
+        $data['prod_attributes']         =  $this->getAssignedAttributes($id); 
+        $data['price']         =   PrdPrice::where('prd_id',$id)->orderBy('id','desc')->first();
+        $data['images']         =   PrdImage::where('prd_id',$id)->where('is_deleted',0)->get();
+        $data['reviews']         =   PrdReview::getProductReviews($id);
+            // dd($data);
+            return view('seller.my_products.view',$data); 
+        }else{ return view('seller.my_products.details',$data); }
+        return view('seller.my_products.details',$data);
+    }
+    
+    function adminProduct($id){return   AdminProduct::where('id',$id)->first();}
+
+    function getAssignedAttributes($id){
+        $qry                        =   AssignedAttribute::where('prd_id',$id)->where('is_deleted',0)->get();
+
+        if($qry){ foreach($qry      as  $attr){
+            $attrs[$attr->attr_id]['name']    =   $this->AttrName($attr->attr_id);
+            if($attr->attr_value !="") {
+                $attrs[$attr->attr_id]['value']    =   $attr->attr_value;
+            }else {
+               $attrs[$attr->attr_id]['value']    =   $this->getAssignedAttrValues($attr->attr_val_id); 
+            }
+            
+        } 
+         return $attrs; }else{         return false; }
+    }
+    function getAssignedAttrValues($attr_val_id){ return   PrdAttributeValue::where('id',$attr_val_id)->where('is_active',1)->where('is_deleted',0)->first()->name; }
+    function AttrName($attr_id){ return   PrdAttribute::where('id',$attr_id)->where('is_active',1)->where('is_deleted',0)->first()->name; }
+
+    function getAttributes(){
+        $qry                        =   PrdAttribute::where('is_active',1)->where('is_deleted',0)->get();
+        if($qry){ foreach($qry      as  $k=>$row){
+            $attrs[$k]              =   $row; 
+            $attrs[$k]['values']    =   $this->getAttrValues($row->id);
+        } return $attrs; }else{         return false; }
+    }
+    
+    function getAttrValues($attrId){ return   PrdAttributeValue::where('attr_id',$attrId)->where('is_active',1)->where('is_deleted',0)->get(); }
+    
+    function getAddedAdminPrdIds($sellerId){ $prdIds = [];
+        $query                      =   Product::where('seller_id',$sellerId)->where('admin_prd_id','>',0)->where('is_deleted',0)->get(['admin_prd_id']);
+        if($query){ foreach($query  as  $row){ $prdIds[] = $row->admin_prd_id; } } return $prdIds;
+    }
+    
+    function validateProduct(Request $request){
+        $post                   =   (object)$request->post(); $error = $validName = false; // echo '<pre>'; print_r($post); echo '</pre>';
+        $prd                   =   $request->post('prd'); $price = $request->post('price'); $attr = $request->post('attr');
+        if($post->prd_option    ==  'option2'){ $rules          =   ['short_desc' => 'required|string|max:250']; }
+        else{ $rules            =   [
+                                        'name'                  =>  'required|string|max:100','category_id'   =>  'required',
+                                        'sub_category_id'       =>  'required', 'short_desc'    =>  'required|string|max:250'
+                                    ];
+        }
+        if($post->id > 0)       {   $sellerId = Product::where('id',$post->id)->first()->seller_id; }else{ $sellerId = 0; }
+        $validator              =   Validator::make($post->prd,$rules);
+        if($post->prd_option    ==  'option1'){ $validName      =   Product::ValidateUnique('name',$prd['name'],$post->id,$sellerId); }
+        if ($validator->fails()){
+            $error['error']     =   'prd';
+           foreach($validator->messages()->getMessages() as $k=>$row){ $error[$k] = $row[0]; }
+        }
+        if($validName){ $error['name']    =   $validName; $error['error']     =   'prd';}
+        if($error) { return $error; }
+        
+        $rules                  =   ['price'  => 'required|numeric|min:1',];   
+        $validator              =   Validator::make($post->price,['price'  => 'required|numeric|min:1','tax'=>'required']);
+        if ($validator->fails()){
+            $error['error']     =   'price';
+           foreach($validator->messages()->getMessages() as $k=>$row){ $error[$k] = $row[0]; }
+        } 
+        if($error) { return $error; }else{ return 'success'; }
+    }   
+
+    function saveProduct(Request $request){
+        $post                   =   (object)$request->post(); 
+        $prd                    =   $post->prd;
+        $price                  =   $post->price; 
+        $attrs                  =   (object)$post->attr; 
+        if(isset($post->assosi)){   $assosi =   (object)$post->assosi; }else{ $assosi = false; }
+        $images                 =   $request->file('image'); 
+        $prd['tax_id']          =   $price['tax']; 
+        $prd['is_approved']     =   0;
+        if(!isset($prd['is_featured'])) { $prd['is_featured']     =   0;}
+         if(!isset($prd['daily_deals'])) { $prd['daily_deals']     =   0;}
+//                echo '<pre>'; print_r($post); echo '</pre>'; 
+//        echo '<pre>'; print_r($request->file()); echo '</pre>'; die;
+
+        if($post->prd_option    ==  'option2' && $post->id == 0){
+            $adPrd              =   AdminProduct::where('id',$post->admin_prd_id)->first();
+            $prd['name']        =   $adPrd->name; $prd['category_id'] = $adPrd->category_id; $prd['sub_category_id'] = $adPrd->sub_category_id;  $prd['is_approved'] =   1;
+            $prd['brand_id']    =   $adPrd->brand_id; $prd['admin_prd_id'] = $post->admin_prd_id; $prd['created_by'] = auth()->user()->id; $post->prd_type = 1; 
+        } $name = $prd['name'];
+        if($post->admin_prd_id  >   0 && $post->id > 0){
+            unset($prd['name']);    unset($prd['category_id']); unset($prd['sub_category_id']); unset($prd['brand_id']);
+        }   $sDesc              =   $prd['short_desc']; $desc = $prd['desc'];  $content = $prd['content']; $specification = @$prd['specification']; unset($prd['specification']);
+                                    unset($prd['short_desc']);  unset($prd['desc']); unset($prd['content']);
+        if($post->id == 0){
+            $prd['product_type']=   $post->prd_type; $prd['seller_id']   =   auth()->user()->id; 
+            $prdId              =   Product::create($prd)->id; $price['created_by']    =   auth()->user()->id;
+            $price['prd_id']    =   $prdId; unset($price['tax']); PrdPrice::create($price);
+            $stockId            =   PrdStock::create(['seller_id'=>$post->seller_id,'prd_id'=>$prdId,'qty'=>0,'rate'=>$post->price['price'],'created_by'=>auth()->user()->id]);
+        }else{ 
+            $prdId              =   $post->id; Product::where('id',$prdId)->update($prd); $price['created_by']    =   auth()->user()->id; 
+            $prdPrice           =   PrdPrice::where('prd_id',$prdId)->where('is_deleted',0)->orderBy('id','desc')->first();
+            if($price['price']  !=  $prdPrice->price || $price['sale_price']  !=  $prdPrice->sale_price || $price['sale_start_date']  !=  $prdPrice->sale_start_date || $price['sale_end_date']  !=  $prdPrice->sale_end_date){
+                $price['prd_id']=   $prdId; unset($price['tax']); PrdPrice::create($price);
+            }
+        }
+         
+        AssignedAttribute::where('prd_id',$prdId)->update(['is_deleted'=>1]);
+        if($attrs){ foreach     (   $attrs as $k=>$attr){ 
+            $prdAttr            =   ['prd_id'=>$prdId,'attr_id'=>$k,'created_by'=>auth()->user()->id];
+            if(!isset($attr['valId'])){ $attr['valId'] = NULL; } if(!isset($attr['value']) || $attr['value'] == ''){ $attr['value'] = NULL; }
+            $prdAttr['attr_val_id'] = $attr['valId']; $prdAttr['attr_value'] = $attr['value'];
+            if($attr['valId']  !=  NULL    ||  $attr['value'] != NULL){  
+                if(AssignedAttribute::where('prd_id',$prdId)->where('attr_id',$k)->exists()){ 
+                   $prdAttr['updated_by']   =   auth()->user()->id; $prdAttr['is_deleted'] = 0;
+                   AssignedAttribute::where('prd_id',$prdId)->where('attr_id',$k)->update($prdAttr);
+                }else{ $prdAttr['updated_by'] = auth()->user()->id; AssignedAttribute::create($prdAttr); }
+            }
+        } }
+        $cmsContent             =   ['name_cnt_id'=>$name,'short_desc_cnt_id'=>$sDesc,'desc_cnt_id'=>$desc,'content_cnt_id'=>$content,'spec_cnt_id'=>$specification];
+        if($post->id > 0)       {   $product = Product::where('id',$post->id)->first(); }else{ $product = false; }
+        foreach($cmsContent     as  $k=>$content){ 
+            if($product)        {   $cId = $product->$k; }else{ $cId = 0 ; }
+            $cntId = $this->addCmsContent($cId,$post->lang_id,$content);
+            Product::where('id',$prdId)->update([$k=>$cntId]);
+        }
+        
+        if($images){ foreach($images as $k=>$image){
+            $imgName            =   time().'.'.$image->extension();
+            $path               =   '/app/public/products/'.$prdId;
+            $destinationPath    =   storage_path($path.'/thumb');
+            $img                =   Image::make($image->path());
+            if(!file_exists($destinationPath)) { mkdir($destinationPath, 755, true);}
+            $img->resize(250, 250, function($constraint){ $constraint->aspectRatio(); })->save($destinationPath.'/'.$imgName);
+            $destinationPath    =   storage_path($path);
+            $image->move($destinationPath, $imgName);
+            $imgUpload          =   uploadFile($path,$imgName);
+            $thumbUpload        =   uploadFile($path.'/thumb',$imgName);
+            if($imgUpload){
+                PrdImage::create(['prd_id'=>$prdId,'image'=>$path.'/'.$imgName,'thumb'=>$path.'/thumb/'.$imgName,'created_by'=>auth()->user()->id]);
+            }
+        } }
+        
+        if($post->id == 0 && $post->prd_type ==  2 && count($post->config) > 0){
+            foreach($post->config   as $row){ AssConfigAttribute::create(['prd_id'=>$prdId,'attr_id'=>$row]); }
+        }
+        AssociatProduct::where('prd_id',$prdId)->update(['is_deleted'=>1]);
+        if($assosi){ foreach($assosi as $k=>$ass){
+            if(AssociatProduct::where('prd_id',$prdId)->where('ass_prd_id',$k)->exists()){ AssociatProduct::where('prd_id',$prdId)->where('ass_prd_id',$k)->update(['is_deleted'=>0]); }
+            else{ AssociatProduct::create(['prd_id'=>$prdId,'ass_prd_id'=>$k]); }
+        } }
+        if($post->id == 0){ $msg    =   'Product added successfully!'; }else{ $msg    =   'Product updated successfully!'; }
+        if($prdId){   return      back()->with('success',$msg); }else{ return back()->with('error','Somthing went wrong. Plese try again after some time.'); }
+    }
+    
+    function addCmsContent($cntId,$l, $cnt){
+        $qry                =   CmsContent::where('cnt_id',$cntId)->where('is_deleted',0)->first(); $insId = false;
+        $query              =   CmsContent::where('cnt_id',$cntId)->where('is_deleted',0)->where('lang_id',$l)->first();
+        if($query)          {   CmsContent::where('id',$query->id)->update(['content'=>$cnt,'updated_by'=>auth()->user()->id]); }
+        else if($qry)       {   $insId   =   CmsContent::create(['cnt_id'=>$cntId,'lang_id'=>$l,'content'=>$cnt,'created_by'=>auth()->user()->id])->id; }
+        else{
+            $cms            =   CmsContent::orderBy('cnt_id','desc')->first(); if($cms){ $cntId = ($cms->cnt_id+1); }else{ $cntId = 1; }
+            $insId          =   CmsContent::create(['cnt_id'=>$cntId,'lang_id'=>$l,'content'=>$cnt,'created_by'=>auth()->user()->id])->id;
+        }
+        return $cntId;
+    }
+    
+    function assignStoreCategories($catIds,$storeId,$sellerId){
+        StoreCategory::where('store_id',$storeId)->update(['is_deleted'=>1]);
+        foreach($catIds as $cId){ 
+            if(StoreCategory::where('store_id',$storeId)->where('category_id',$cId)->count() > 0){ 
+                StoreCategory::where('store_id',$storeId)->where('category_id',$cId)->update(['is_deleted'=>0]);
+            }else{ StoreCategory::create(['seller_id'=>$sellerId,'store_id'=>$storeId,'category_id'=>$cId]); }
+        } return true;
+    }
+    
+    function updateStatus(Request $request){
+        $post               =   (object)$request->post(); 
+        $result             =   Product::where('id',$post->id)->update([$post->field => $post->value]);
+        if($post->page      !=  'new_seller'){  Store::where('seller_id',$post->id)->update([$post->field => $post->value]); }
+        if($post->field     ==  'is_deleted' || $post->field  == 'is_approved'){
+//        $data['title']      =   'Seller List';
+//        $data['sellers']    =   Seller::get();
+//            return view('admin.seller.list.content',$data);
+            Session::flash('success', $post->msg);
+        }else{
+            if($result){ return ['type'=>'success','id'=>$post->id]; }else{  return ['type'=>'warning','id'=>$post->id]; } 
+        }
+    }
+    
+    function associativeProducts(Request $request){
+        $post                       =   (object)$request->post(); $prdIds = [0]; $products = false; $attrIds = $attrs = [];
+        if(isset($post->attrIds))   {   $attrIds    =   $post->attrIds; }
+        if(count($attrIds) > 0){
+            $attrs                  =   PrdAttribute::whereIn('id',$attrIds)->where('is_deleted',0)->get();
+            foreach($attrIds        as  $k=>$rw){ 
+               if($k == 0){ $qry    =   AssignedAttribute::where('attr_id',$rw)->where('is_deleted',0)->get(); }
+               else{ $qry           =   AssignedAttribute::whereIn('prd_id',$prdIds)->where('attr_id',$rw)->where('is_deleted',0)->get(); }
+               $prdIds              =   [];
+               if($qry){ foreach    (   $qry  as  $row){ $prdIds[] = $row->prd_id; }  }
+           //    print_r($prdIds); die;
+               if(count($prdIds)    ==  0){                   break; }
+            }
+        }
+        if(count($prdIds)           >   0){ $products = Product::whereIn('id',$prdIds)->where('seller_id',$post->sellerId)->where('is_approved',1)->where('is_active',1)->where('is_deleted',0)->get(); }
+        $data['assPrds']            =   $products; $data['attrs'] = $attrs; $data['unassAssoPrds'] = false; $data['assAssoPrdIds'] = [];
+      //   echo '<pre>'; print_r($data['assPrds']); echo '</pre>'; die;
+        return view('seller.my_products.details.associative_prds',$data);
+    }
+    
+    function getAssosiProducts($attrIds,$sellerId,$assgned){
+        if(count($attrIds) > 0){
+            $attrs                  =   PrdAttribute::whereIn('id',$attrIds)->where('is_deleted',0)->get();
+            foreach($attrIds        as  $k=>$rw){ 
+               if($k == 0){ $qry    =   AssignedAttribute::where('attr_id',$rw)->where('is_deleted',0)->get(); }
+               else{ $qry           =   AssignedAttribute::whereIn('prd_id',$prdIds)->where('attr_id',$rw)->where('is_deleted',0)->get(); }
+               $prdIds              =   [];
+               if($qry){ foreach    (   $qry  as  $row){ $prdIds[] = $row->prd_id; }  }
+           //    print_r($prdIds); die;
+               if(count($prdIds)    ==  0){                   break; }
+            }
+        }
+        if(count($prdIds)           >   0){ $products = Product::whereIn('id',$prdIds)->where('seller_id',$sellerId)->where('is_approved',1)->where('is_active',1)->where('is_deleted',0)->get(); }
+        return $products; // $data['attrs'] = $attrs; $data['unassAssoPrds'] = false;
+    }
+    
+    function getConficAttrPrds($prdId){
+         $res = $attrs          =   []; $attrIds = $res = false;
+        $query                  =   AssConfigAttribute::where('prd_id',$prdId)->where('is_deleted',0)->get();
+        if($query){ foreach     (   $query as $row){ $attrIds[] = $row->attr_id; } }
+        if($attrIds){
+            $res['attrIds']     =   $attrIds;
+            $res['attrs']       =   PrdAttribute::whereIn('id',$attrIds)->where('is_active',1)->where('is_deleted',0)->get();
+        } return $res;
+    }
+    
+    function getAssignedAssosiProducts($prdId){  $assPrdIds = [];
+        $query                  =   AssociatProduct::where('prd_id',$prdId)->where('is_deleted',0)->get(['ass_prd_id']);
+        if($query){ foreach     (   $query as $row){ $assPrdIds[]   =   $row->ass_prd_id; } }else{ $assPrdIds = []; }
+        return $assPrdIds;
+    }
+    
+     function specialOffer($prd_id){
+        $data['title']              =   'Product Special Offer';
+        $data['menuGroup']          =   'sellerGroup';
+        $data['menu']               =   'specialoffer';
+        $offer                     =   PrdOffer::where('prd_id',$prd_id)->where('is_deleted',0)->first();
+        if(isset($offer)){ 
+            $data['offer']             =   $offer;
+         }
+         $data['prd_id']             =   $prd_id;
+        // dd($data);
+        return view('seller.my_products.offer',$data);
+    }
+
+
+     function saveOffer(Request $request){
+        $post                   =   (object)$request->post(); 
+       $validator= $request->validate([
+        'discount_value'   =>  ['required'],
+        'quantity_limit' => ['required'],
+        'valid_from' => ['required'],
+        'valid_to' => ['required']
+
+        ], [], 
+        [
+        'discount_value' => 'Discount Value',
+        'quantity_limit' => 'Quantity Limit',
+        'country' => 'Country',
+        'valid_from' => 'Valid From',
+        'valid_to' => 'Valid To'
+        ]);
+
+        $prd_id                    =   $post->prd_id;
+        $offr_arr = [];
+        $offr_arr['org_id'] = 1;
+        $offr_arr['prd_id'] = $prd_id;
+        $offr_arr['discount_value'] = $post->discount_value;
+        $offr_arr['discount_type'] = $post->discount_type;
+        $offr_arr['quantity_limit'] = $post->quantity_limit;
+        $offr_arr['valid_from'] = $post->valid_from;
+        $offr_arr['valid_to'] = $post->valid_to;
+        $offr_arr['is_active'] = $post->is_active;
+        $offr_arr['is_deleted'] = 0;
+        
+        if($post->id >0){
+        $offr_arr['updated_by'] = auth()->user()->id;
+        $offr_arr['updated_at'] = date("Y-m-d H:i:s");
+        $offrId =  PrdOffer::where('id',$post->id)->update($offr_arr); 
+         $msg    =   'Special Offer updated successfully!';
+        }else {
+        $offr_arr['created_by'] = auth()->user()->id;
+        $offrId                  =   PrdOffer::create($offr_arr)->id;
+         $msg    =   'Special Offer added successfully!';
+
+        }
+        
+       
+        if($offrId){   return      back()->with('success',$msg); }else{ return back()->with('error','Somthing went wrong. Plese try again after some time.'); }
+    }
+    
+    function stocks(){
+        $data['title']              =   'Product Stock List';
+        $data['menuGroup']          =   'sellerGroup';
+        $data['menu']               =   'stock';
+        $stocks                     =   PrdStock::where('is_deleted',0)->groupBy('prd_id')->get();
+        if($stocks){ foreach        (   $stocks as $row){
+            $row->stock             =   PrdStock::where('prd_id',$row->prd_id)->where('is_deleted',0)->sum('qty');
+            $data[]                 =   $row;
+        } }
+        $data['stocks']             =   $stocks;
+        return view('seller.stock.list',$data);
+    }
+    
+    function stock(Request $request){
+        $post                       =  (object) $request->post();
+        $data['title']              =   'Addd Stock';
+        $data['menuGroup']          =   'sellerGroup';
+        $data['menu']               =   'stock';
+        $data['product']            =   Product::where('id',$post->prdId)->first();
+        $data['seller']             =   SellerInfo::where('seller_id',$post->sellerId)->first();
+        $data['price']              =   PrdPrice::where('prd_id',$post->prdId)->where('is_deleted',0)->orderBy('id','desc')->first();
+        return view('seller.stock.details',$data);
+    }
+    
+    function saveStock(Request $request){
+        $post                       =  (object) $request->post();
+     //   echo '<pre>'; print_r($post); echo '</pre>';
+        $insId                      =   PrdStock::create($post->stock)->id;
+        if($insId){ $type           =   'success'; $msg = 'Stock added successfully!'; }
+        else{ $type = 'error';          $msg = 'Somthing went wrong. Please try after some time'; }
+        return back()->with($type,$msg);
+    }
+        function importProducts(Request $request){
+        $imp_file               =   $request->file('imp_file');
+       
+        $request->validate([
+        'imp_file' => 'required'
+        ]);
+
+         if($imp_file){ 
+            $fileName            =  'prod_import_'.time().'.'.$imp_file->getClientOriginalExtension();
+            $path = '/app/public/products/imports';
+            $destinationPath    =   storage_path('/app/public/products/imports/');
+            $imp_file->move($destinationPath, $fileName);
+
+            PrdImports::create(['file'=>$path."/".$fileName,'user_id'=>auth()->user()->id,'created_at'=>time()]);
+            // dd(url('storage/'.$path."/".$fileName));
+    
+            Excel::import(new ProductImport, storage_path('/app/public/products/imports/')."/".$fileName);
+
+           
+            return redirect()->back();   
+        }
+    }
+    
+    function editorImage(Request $request){
+        $input = $request->all();
+       $image = $input['image']; 
+
+     $imgName            =   time().'.'.$image->extension();
+            $path               =   '/app/public/products/editor/';
+            
+            $img                =   Image::make($image->path());
+           
+            $destinationPath    =   storage_path($path);
+            $image->move($destinationPath, $imgName);
+            $image_url = $path.$imgName; 
+            $image_url = url('storage/'.$image_url);
+           return $image_url;
+
+
+       
+    }
+
+}
