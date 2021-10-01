@@ -52,12 +52,12 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost/kangtao-uat'),
+    'url' => env('APP_URL', 'https://qa-kt.estrradoweb.com'),
 
-    'asset_url' => env('ASSET_URL', 'http://localhost/kangtao-uat/public'),
+    'asset_url' => env('ASSET_URL', 'https://qa-kt.estrradoweb.com/public'),
     
-    'upload_url' => env('UPLOAD_URL', 'http://localhost/kangtao-uat/uploads/api'),
-    'storage_url' => env('STORAGE_URL', 'http://localhost/kangtao-uat/uploads/storage'),
+    'upload_url' => env('UPLOAD_URL', 'https://qa-kt.estrradoweb.com/uploads/api'),
+    'storage_url' => env('STORAGE_URL', 'https://qa-kt.estrradoweb.com/uploads/storage'),
     /*
     |--------------------------------------------------------------------------
     | Application Timezone
