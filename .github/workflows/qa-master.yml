@@ -6,11 +6,19 @@ on:
 
 
 jobs:
-  build:
-
+   build:
+    name: Build
     runs-on: ubuntu-latest
-
     steps:
+    - name: executing remote ssh commands using password
+      uses: appleboy/ssh-action@master
+      with:
+        host: qa-kt.estrradoweb.com
+        username: qaktestrradoweb
+        password: ${{ secrets.QA_PASS }}
+        port: 22
+        
+
     - name: executing remote ssh commands using ssh key
       uses: appleboy/ssh-action@master
       with:
@@ -18,4 +26,5 @@ jobs:
         username: qaktestrradoweb
         key: ${{ secrets.QA_SECRET }}
         port: 22
+        
         
