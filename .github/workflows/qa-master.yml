@@ -14,16 +14,16 @@ jobs:
       uses: appleboy/ssh-action@master
       with:
         host: qa-kt.estrradoweb.com
-        username: qaktestrradoweb
+        username: qaktestrradoweb@qa-kt.estrradoweb.com
         password: ${{ secrets.QA_PASS }}
-        port: 22
+        
         
 
     - name: executing remote ssh commands using ssh key
       uses: appleboy/ssh-action@master
       with:
         host: qa-kt.estrradoweb.com
-        username: qaktestrradoweb
+        username: qaktestrradoweb@qa-kt.estrradoweb.com
         key: ${{ secrets.QA_SECRET }}
         port: 22
         
