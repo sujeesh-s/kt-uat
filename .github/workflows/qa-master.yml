@@ -18,6 +18,7 @@ jobs:
         username: ${{ secrets.QA_USER }}
         key: ${{ secrets.QA_SECRET }}
         script: |
+            cd public_html
             git pull origin master
 
         
