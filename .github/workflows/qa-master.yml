@@ -17,6 +17,8 @@ jobs:
         host: ${{ secrets.QA_HOST }}
         username: ${{ secrets.QA_USER }}
         key: ${{ secrets.QA_SECRET }}
-        
+        script: |
+            git pull gitpub qa
+
         
         
