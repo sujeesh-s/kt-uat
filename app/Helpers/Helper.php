@@ -7,6 +7,7 @@ use App\Models\Admin;
 use App\Models\City;
 use App\Models\State;
 use App\Models\Country;
+use App\Models\AppVersion;
 if (!function_exists('geSiteName')) {
 
     function geSiteName() {
@@ -162,5 +163,16 @@ if (!function_exists('getCities')) {
          }
         
         if($city_data){            return $city_data; } return '';
+    }
+}
+if (!function_exists('appVersion')) {
+    function appVersion($type){ 
+    if($type =="admin") {
+        return AppVersion::where('id', 1)->first()->admin_web; 
+    }
+    else{
+        return AppVersion::where('id', 1)->first()->admin_web; 
+    }
+        
     }
 }

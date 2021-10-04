@@ -2,6 +2,7 @@
     if(auth()->user()->avatar == NULL){ $avatar = url('storage/app/public/no-avatar.png'); }
     else{ $avatar = url('storage'.auth()->user()->avatar); }
     $sidebar = sidebarMenu();
+    $version = appVersion('admin');
 @endphp
 <aside class="app-sidebar">
         <div class="app-sidebar__logo">
@@ -16,7 +17,8 @@
                         </div>
                         <div class="user-info">
                                 <h5 class=" mb-1">{{auth()->user()->fname.' '.auth()->user()->lname}} <i class="ion-checkmark-circled  text-success fs-12"></i></h5>
-                                <span class="text-muted app-sidebar__user-name text-sm">{{roleData()->usr_role_name}}</span>
+                                <span class="text-muted app-sidebar__user-name text-sm">{{roleData()->usr_role_name}}</span><br>
+                                <span class="text-muted app-sidebar__user-name text-sm">{{ $version }}</span>
                         </div> 
                 </div>
                 
