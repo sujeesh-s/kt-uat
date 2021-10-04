@@ -33,7 +33,7 @@
 		<!---Icons css-->
 		<link href="{{URL::asset('admin/assets/css/icons.css')}}" rel="stylesheet" />
 		@yield('css')
-	
+	@include('includes.config-styles')
 		<!-- Simplebar css -->
 		<link rel="stylesheet" href="{{URL::asset('admin/assets/plugins/simplebar/css/simplebar.css')}}">
 

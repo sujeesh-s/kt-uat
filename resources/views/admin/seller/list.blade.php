@@ -12,6 +12,11 @@
         }
     }); 
     $(document).ready(function(){ 
+        setTimeout(function(){ 
+            $('body #seller .switch').each(function(){
+          var srch = $(this).data('search');
+            $(this).closest("td").attr("data-search",srch);
+        }); }, 1000);
         $('#adminForm #can_submit').val(0); 
         @if(Session::has('success')) toastr.success("{{ Session::get('success')}}"); 
         @elseif(Session::has('error')) toastr.error("{{ Session::get('error')}}");  @endif
@@ -154,8 +159,18 @@ required: "Account Holder is required."
             var smsg        =   'Seller activated successfully!';
             if (sts == true){ var status = 1; }else if (sts == false){var status = 0; smsg = 'Seller deactivated successfully!'; }
             updateStatus(id,bId,status,url,'dtrow-','is_active',smsg);
+            $('#seller').DataTable().ajax.reload();
         });
-        $('body').on('click','.delBtn',function(){  // alert('sss');
+        $("body").on("change", ".service-status-btn", function () {
+            var id          =   this.id.replace('service-status-','');
+            var bId         =   this.id;
+            var sts         =   $(this).prop("checked");
+            var url         =   '{{url("admin/seller/updateServiceStatus")}}';
+            var smsg        =   'Service status activated successfully!';
+            if (sts == true){ var status = 1; }else if (sts == false){var status = 0; smsg = 'Service status deactivated successfully!'; }
+            updateStatus(id,bId,status,url,'dtrow-','service_status',smsg);
+        });
+        $('body').on('click','.delBtn',function(){  
             var id          =   this.id.replace('delBtn-',''); 
             var status      =   1;
             var url         =   '{{url("admin/seller/updateStatus")}}';
@@ -174,16 +189,8 @@ required: "Account Holder is required."
             });
         });
         
-        $('body').on('change','#active_filter',function(){  
-            $('#table_body').append($('#loader').html()); $('#attribute').addClass('blur'); 
-            $.ajax({
-                type: "POST",
-                url: '{{url("admin/sellers")}}',
-                data: {active: this.value,viewType: 'ajax'},
-                success: function (data) {
-                    $('#pg_content').html(data); 
-                } 
-            });
+         $('body').on('change','#active_filter',function(){ 
+            $('#seller').DataTable().ajax.url("{{url('/admin/sellers')}}?active="+this.value).load();
         });
         
         $('body').on('change','#country_id',function(){

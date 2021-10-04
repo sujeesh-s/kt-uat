@@ -18,8 +18,9 @@
                                     <table id="attribute" class="seller-table table table-striped table-bordered w-100 text-nowrap">
                                     <thead>
                                         <tr>
-                                            <th class="wd-15p notexport">ID</th>
-                                            <th class="wd-15p">Name</th>
+                                            <th class="wd-15p notexport"></th>
+                                            <th class="wd-15p">Business Name</th>
+                                            <th class="wd-15p">Store Name</th>
                                             <th class="wd-15p">Email</th>
                                             <th class="wd-20p">Phone</th>
                                             <th class="wd-10p">Created On</th>
@@ -33,7 +34,8 @@
                                                 @php if($row->is_approved == 0){ $status = "Pending"; $sclass = 'warning'; }else{ $status = "Denied"; $sclass = "error"; } @endphp
                                                 <tr class="dtrow" id="dtrow-{{$row->id}}">
                                                     <td><span class="d-none">{{$n}}</span></td>
-                                                    <td>{{$row->fname.' '.$row->lname}}</td>
+                                                   <td>{{$row->store($row->seller_id)->business_name}}</td> 
+                                                   <td>{{$row->store($row->seller_id)->store_name}}</td> 
                                                     <td>@if($row->sellerMst->teleEmail) {{$row->sellerMst->teleEmail->value}} @endif</td>
                                                     <td>@if($row->sellerMst->telePhone) {{$row->sellerMst->telePhone->value}} @endif</td>
                                                     <td>{{date('d M Y',strtotime($row->created_at))}}</td>

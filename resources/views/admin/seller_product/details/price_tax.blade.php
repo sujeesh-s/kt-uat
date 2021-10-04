@@ -9,35 +9,44 @@
 
  <?php if($prdType !="") { if($prdType ==1) { $simple_prod = "display:block;"; $var_prod = "display:none;"; }else {  $simple_prod = "display:none;"; $var_prod = "display:block;"; } }else { $simple_prod = "display:block;"; $var_prod = "display:none;"; }  ?>
 
-     <div class="row panel-body tabs-menu-body simple_prod" style="<?php echo $simple_prod; ?>">     
+     <div class="row panel-body1 tabs-menu-body1 simple_prod" style="<?php echo $simple_prod; ?>">     
         <div class="tab-content col-12">
      <div class="card-header mb-4"><div class="card-title">Price & Tax</div></div>       
      <div class="clearfix"></div>   
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('price','Price',['class'=>''])}}
-            {{Form::text('price[price]',$price,['id'=>'price', 'class'=>'form-control','placeholder'=>'price'])}}
+            {{Form::number('price[price]',$price,['id'=>'price', 'class'=>'form-control','placeholder'=>'price','max'=>9999999999])}}
             <span class="error"></span>
         </div>
     </div>
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('sale_price','Sale Price',['class'=>''])}}
-            {{Form::text('price[sale_price]',$sPrice,['id'=>'sale_price','class'=>'form-control chosen-select','placeholder'=>'Sale Price'])}}
+            {{Form::number('price[sale_price]',$sPrice,['id'=>'sale_price','class'=>'form-control chosen-select','placeholder'=>'Sale Price','max'=>9999999999])}}
             <span class="error"></span>
         </div>
     </div> 
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('sale_start_date','Sale From Date',['class'=>''])}}
-            {{Form::date('price[sale_start_date]',$stDate,['id'=>'sale_start_date','class'=>'form-control','placeholder'=>'Start Date'])}}
+            <div   class=" input-group " >
+            <input class="form-control datepicker sale_start_date" id="sale_start_date" name="price[sale_start_date]" type="text" readonly value="{{$stDate}}" placeholder="Start Date" data-date-format="yyyy-mm-dd" />
+            <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+            </div>
+															
             <span class="error"></span>
         </div>
     </div> 
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('sale_end_date','Sale To Date',['class'=>''])}}
-            {{Form::date('price[sale_end_date]',$edDate,['id'=>'sale_end_date','class'=>'form-control','placeholder'=>'End Date'])}}
+           
+            <div   class=" input-group " >
+            <input class="form-control datepicker sale_end_date" id="sale_end_date" name="price[sale_end_date]" type="text" readonly value="{{$edDate}}" placeholder="End Date" data-date-format="yyyy-mm-dd" />
+            <span class="input-group-addon"><i class="glyphicon glyphicon-calendar"></i></span>
+            </div>
+            
             <span class="error"></span>
         </div>
     </div> 
@@ -48,6 +57,48 @@
             <span class="error"></span>
         </div>
     </div>
+</div>
+<div class="clearfix"></div>
+<div class="tab-content col-12">
+     <div class="card-header mb-4"><div class="card-title">Shipping</div></div>       
+     <div class="clearfix"></div>   
+    <div class="col-lg-4 fl">
+        <div class="form-group">
+            {{Form::label('weight','Weight (kg)',['class'=>''])}}
+            {{Form::number('dimension[weight]',$weight,['id'=>'weight', 'class'=>'form-control','placeholder'=>'Weight','max'=>9999999999])}}
+            <span class="error"></span>
+        </div>
+    </div>
+    <div class="col-lg-8 fl">
+        <div class="form-group">
+            {{Form::label('dimensions','Dimensions (cm)',['class'=>''])}}
+            <div class="tab-content">
+                <div class="col-lg-4 fl">
+                <div class="form-group">
+                
+                {{Form::number('dimension[length]',$length,['id'=>'length', 'class'=>'form-control','placeholder'=>'Length','max'=>9999999999])}}
+                <span class="error"></span>
+                </div>
+                </div>
+                
+                <div class="col-lg-4 fl">
+                <div class="form-group">
+                
+                {{Form::number('dimension[width]',$width,['id'=>'width', 'class'=>'form-control','placeholder'=>'Width','max'=>9999999999])}}
+                <span class="error"></span>
+                </div>
+                </div>
+                <div class="col-lg-4 fl">
+                <div class="form-group">
+                
+                {{Form::number('dimension[height]',$height,['id'=>'height', 'class'=>'form-control','placeholder'=>'Height','max'=>9999999999])}}
+                <span class="error"></span>
+                </div>
+                </div>
+            </div>    
+     </div>
+    </div> 
+    
 </div>
 </div>
                 <div class="row panel-body tabs-menu-body variable_prod" style="<?php echo $var_prod; ?>">
@@ -341,5 +392,45 @@
     $(document).ready(function(){
         $("#variation_table input").trigger("input");
          build_table();
+    });
+    
+     $(document).ready(function(){
+           $(".datepicker").datepicker({ 
+        autoclose: true, 
+        todayHighlight: true,
+       startDate: new Date()
+  }).datepicker(); 
+  
+         var st_date = $("#sale_start_date").val();
+         var en_date = $("#sale_end_date").val();
+         console.log("st_date"+st_date);
+         if(st_date){
+           $('#sale_start_date').datepicker('startDate',new Date(st_date));  
+         }else {
+           $('#sale_start_date').datepicker("update", new Date());  
+         }
+         if(en_date){
+           $('#sale_end_date').datepicker('startDate',new Date(en_date));  
+         }else{
+           $('#sale_end_date').datepicker("update", new Date());   
+         }
+      
+  
+        $('body').on('change','.sale_start_date,.sale_end_date',function(){
+        var sdate=$("#sale_start_date").val();
+        var tdate=$("#sale_end_date").val();
+        
+        // $('#sale_start_date').datepicker('setStartDate',new Date(sdate));
+        if(sdate && tdate)
+        {
+        var d1 = Date.parse(sdate);
+        var d2 = Date.parse(tdate);
+        if (d1 > d2) 
+        {
+        $("#sale_end_date").val(sdate);
+        $('#sale_end_date').datepicker('setStartDate',new Date(sdate));
+        }
+        }
+        });
     });
 </script>

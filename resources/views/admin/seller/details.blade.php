@@ -35,7 +35,7 @@
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>User Management</a></li>
             <li class="breadcrumb-item"><a href="#" id="bc_list"><i class="fe fe-grid mr-2 fs-14"></i>Seller List</a></li>
-            <li class="breadcrumb-item active" aria-current="page"><a href="#">{{$title}}</a></li>
+            <li class="breadcrumb-item active" aria-current="page"><a href="#">@if($id > 0) Edit Seller @else Add Seller @endif</a></li>
         </ol>
     </div>
      <div class="page-rightheader" style="display:flex; flex-direction: row; justify-content: center; align-items: center">

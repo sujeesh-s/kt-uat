@@ -18,7 +18,7 @@
 								<h4 class="page-title mb-0">View Category</h4>
 								<ol class="breadcrumb">
 									<li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Masters</a></li>
-									<li class="breadcrumb-item active" aria-current="page"><a href="#">Category List</a></li>
+									<li class="breadcrumb-item active" aria-current="page"><a href="{{ route('admin.category')}}">Category List</a></li>
 									<li class="breadcrumb-item active" aria-current="page"><a href="#">View Category</a></li>
 								</ol>
 							</div>

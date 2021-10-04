@@ -266,7 +266,19 @@ class AdminController extends Controller
         $user           =   $post->user; 
         if($post->id    >   0){
 
-         
+           $rules                  =   [
+        
+        'email'                 =>  'unique:admins,email,' .$post->id,
+        'phone'                 =>  'unique:admins,phone,' .$post->id,
+        'role_id'                 =>  'required',
+        ];
+        $validator              =   Validator::make($user,$rules);
+        if ($validator->fails()) {
+        foreach($validator->messages()->getMessages() as $k=>$row){  $error[$k] = $row[0];
+        Session::flash('message', ['text'=>$row[0],'type'=>'danger']); }
+        
+       return back()->withInput($request->all());
+        }
 
         if($post->user['password']      ==  ''){ unset($post->user['password']); }
         else{ $post->user['password']   =   Hash::make($post->user['password']); }
@@ -277,7 +289,7 @@ class AdminController extends Controller
         
         $rules                  =   [
         
-        'email'                 =>  'required|unique:admins|email|max:100',
+        'email'                 =>  'required|unique:admins,email|email|max:100',
         'phone'                 =>  'required|numeric|unique:admins',
         'role_id'                 =>  'required',
         ];
@@ -286,7 +298,7 @@ class AdminController extends Controller
         foreach($validator->messages()->getMessages() as $k=>$row){  $error[$k] = $row[0];
         Session::flash('message', ['text'=>$row[0],'type'=>'danger']); }
         
-        return redirect(route('admin.admins'));
+       return back()->withInput($request->all());
         }
         
         $post->user['password']         =   Hash::make($post->user['password']);

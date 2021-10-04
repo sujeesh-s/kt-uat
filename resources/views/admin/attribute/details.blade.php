@@ -43,28 +43,28 @@
                                 <div class="card-header mb-4""><div class="card-title">Attribute Details</div></div>
                                 <div class="col-lg-6 fl">
                                     <div class="form-group">
-                                        {{Form::label('name','Attribute Name',['class'=>''])}}{{Form::hidden('attr_cnt_id',$nameId,['id'=>'attr_cnt_id'])}} 
+                                        {{Form::label('name','Attribute Name',['class'=>''])}} <span class="text-red">*</span> {{Form::hidden('attr_cnt_id',$nameId,['id'=>'attr_cnt_id'])}}
                                         {{Form::text('attr[name]',$name,['id'=>'name','class'=>'form-control','placeholder'=>'Attribute Name'])}}
                                         <span class="error"></span>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 fl">
                                     <div class="form-group">
-                                        {{Form::label('type','Attribute Type',['class'=>''])}}
+                                        {{Form::label('type','Attribute Type',['class'=>''])}} <span class="text-red">*</span>
                                         {{Form::select('attr[type]',$values,$type,['id'=>'type', 'class'=>'form-control','placeholder'=>'Select','disabled'=>$disableType])}}
                                         <span class="error"></span>
                                     </div>
                                 </div>
                                 <div id="data_type_div" class="col-lg-6 fl">
                                     <div class="form-group">
-                                        {{Form::label('data_type','Input Type',['class'=>''])}}
+                                        {{Form::label('data_type','Input Type',['class'=>''])}} <span class="text-red">*</span>
                                         {{Form::select('attr[data_type]',$inputs,$input,['id'=>'data_type', 'class'=>'form-control','placeholder'=>'Select'])}}
                                         <span class="error"></span>
                                     </div>
                                 </div>
                                 <div class="col-lg-6 fl">
                                     <div class="form-group">
-                                        {{Form::label('required','Required',['class'=>''])}}
+                                        {{Form::label('required','Required',['class'=>''])}} <span class="text-red">*</span>
                                         {{Form::select('attr[required]',['1'=>'Yes','0'=>'No'],$required,['id'=>'required', 'class'=>'form-control','placeholder'=>'Select'])}}
                                         <span class="error"></span>
                                     </div>
@@ -85,7 +85,7 @@
                                 </div>
                                 <div class="col-lg-6 fl">
                                     <div class="form-group">
-                                        {{Form::label('is_active','Status')}}
+                                        {{Form::label('is_active','Status')}} <span class="text-red">*</span>
                                         {{Form::select('attr[is_active]',['1'=>'Active','0'=>'Inactive'],$active,['id'=>'is_active', 'class'=>'form-control'])}}
                                     </div>
                                 </div>

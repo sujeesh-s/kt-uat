@@ -6,6 +6,11 @@
 		<link href="{{URL::asset('admin/assets/plugins/datatable/responsive.bootstrap4.min.css')}}" rel="stylesheet" />
 		<link href="{{URL::asset('admin/assets/plugins/sweet-alert/jquery.sweet-modal.min.css')}}" rel="stylesheet" />
 		<link href="{{URL::asset('admin/assets/plugins/sweet-alert/sweetalert.css')}}" rel="stylesheet" />
+		<style>
+		#avatar {
+		    padding:3px;
+		}
+		</style>
 @endsection
 @section('page-header')
 						<!--Page header-->
@@ -35,16 +40,7 @@
 						<div class="row flex-lg-nowrap">
 							<div class="col-12">
 
-								@if(Session::has('message'))
-
-								<div class="alert alert-{{session('message')['type']}}" role="alert"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>{{session('message')['text']}}</div>
-								@endif
-								@if ($errors->any())
-								@foreach ($errors->all() as $error)
-
-								<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>{{$error}}</div>
-								@endforeach
-								@endif
+								
 								<div class="row flex-lg-nowrap">
 									<div class="col-12 mb-3">
 										<div class="e-panel card">
@@ -66,7 +62,7 @@
                     <span class="error"></span>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="lname">Last name</label>
+                    <label for="lname">Last name <span class="text-red">*</span></label>
                     <input type="text" class="form-control" name="user[lname]" id="lname" placeholder="Last name" value="{{ $admin->lname }}" required>
                     <span class="error"></span>
                 </div>
@@ -88,13 +84,13 @@
 
             <div class="form-row">
                 <div class="col-md-6 mb-3">
-                    <label for="password">Password <span class="text-red">*</span></label>
+                    <label for="password">Password </label>
                     <input type="password" class="form-control" name="user[password]" id="password" placeholder="Password" value="" >
                     <span class="error"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="avatar">Avatar</label>
-                    {{Form::file('avatar',['id'=>'avatar','class'=>'form-control'])}}
+                    {{Form::file('avatar',['id'=>'avatar','class'=>'form-control', 'accept'=>"image/*"])}}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="avatar">Status <span class="text-red">*</span></label>
@@ -261,7 +257,7 @@
 		<script src="{{URL::asset('admin/assets/js/datatables.js')}}"></script>
 	<!-- INTERNAL Popover js -->
 		<script src="{{URL::asset('admin/assets/js/popover.js')}}"></script>
-
+<script src="{{URL::asset('admin/assets/js/jquery.validate.min.js')}}"></script>
 		<!-- INTERNAL Sweet alert js -->
 		<script src="{{URL::asset('admin/assets/plugins/sweet-alert/jquery.sweet-modal.min.js')}}"></script>
 		<script src="{{URL::asset('admin/assets/plugins/sweet-alert/sweetalert.min.js')}}"></script>
@@ -269,89 +265,106 @@
 <script type="text/javascript">
 	jQuery(document).ready(function(){
 
-jQuery(".editmodule").click(function(){
-
-	jQuery("#user-form-modal .modal-title").text("Edit Module");
-
-var moduleid = jQuery(this).parents("tr").find("#moduleid").data("value");
-var module_name = jQuery(this).parents("tr").find("#module_name").data("value");
-var module_link = jQuery(this).parents("tr").find("#module_link").data("value");
-var module_class = jQuery(this).parents("tr").find("#module_class").data("value");
-var module_status = jQuery(this).parents("tr").find("#module_status").data("value");
-var module_order = jQuery(this).parents("tr").find("#module_order").data("value");
-
-jQuery("#userForm #moduleid").val(moduleid);
-jQuery("#userForm #module_name").val(module_name);
-jQuery("#userForm #module_link").val(module_link);
-jQuery("#userForm #module_class").val(module_class);
-jQuery("#userForm #module_status").val(module_status);
-jQuery("#userForm #module_order").val(module_order);
-
-
-});
-
-jQuery(".addmodule").click(function(){
-
-jQuery("#user-form-modal .modal-title").text("Create Module");
-jQuery("#userForm #moduleid").val(0);
-$("#userForm").trigger("reset");
-
-});
-
-
-// jQuery(".deletemodule").click(function(){
-
-// 	jQuery("#user-form-modal .modal-title").text("Edit Module");
-
-// var moduleid = jQuery(this).parents("tr").find("#moduleid").data("value");
 
 
 
-//  if(confirm("Are you sure you want to delete this module?")){
-//        alert(moduleid);
-//     }
-//     else{
-//         return false;
-//     }
+jQuery.validator.addMethod("phone", function (phone_number, element) {
+        phone_number = phone_number.replace(/\s+/g, "");
+        return this.optional(element) || phone_number.length > 9 &&
+              phone_number.match(/\(?([0-9]{3})\)?([ .-]?)([0-9]{3})\2([0-9]{4})/);
+    }, "Invalid phone number");
 
 
-// });
+$("#save_btn").click(function(){
 
-	// Prompt
-	$(".deletemodule").on("click", function(e){
+$("#adminForm").validate({
+	ignore: [],
+rules: {
 
-		var moduleid = jQuery(this).parents("tr").find("#moduleid").data("value");
-		$('body').removeClass('timer-alert');
-		swal({
-			title: "Delete Confirmation",
-			text: "Are you sure you want to delete this module?",
-			// type: "input",
-			showCancelButton: true,
-			closeOnConfirm: true,
-			confirmButtonText: 'Yes'
-		},function(inputValue){
+"user[fname]" : {
+required: true
+},
+
+"user[email]": {
+required: true,
+email: true
+},
+"user[phone]": {
+
+required: true,
+phone:true,
+number: true,
+},
+
+"user[role_id]" : {
+required: true
+},
+
+"user[password]" : {
+
+maxlength: 15,
+minlength: 6
+
+},
+},
+
+messages : {
+"user[fname]": {
+required: "First name is required."
+},
+"user[email]": {
+required: "Email is required."
+},
+"user[phone]": {
+required: "Phone number is required."
+},
+
+"user[role_id]": {
+required: "Role is required."
+}
+
+},
 
 
-
-			if (inputValue == true) {
-			 $.ajax({
-            type: "POST",
-            url: '{{url("/admin/modules/delete")}}',
-            data: { "_token": "{{csrf_token()}}", id: moduleid},
-            success: function (data) {
-            	// alert(data);
-            	if(data ==1){
-            		location.reload();
-            	}
-            
+ errorPlacement: function(error, element) {
+ 	 // $("#errNm1").empty();$("#errNm2").empty();
+ 	 console.log($(error).text());
+            if (element.attr("name") == "subcat_id" ) {
+            	console.log("innnnnn");
+                $("#errNm1").text($(error).text());
+                
+            }else if (element.attr("name") == "product_id" ) {
+                $("#errNm2").text($(error).text());
+                
+            }else {
+               error.insertAfter(element)
             }
-        });
+        },
 
-			}
-		});
-	});
+});
+});
+
+
 
 	});
 </script>
-
+<script type="text/javascript">
+    $(document).ready(function(){
+            @if(Session::has('message'))
+            @if(session('message')['type'] =="success")
+            
+            toastr.success("{{session('message')['text']}}"); 
+            @else
+            toastr.error("{{session('message')['text']}}"); 
+            @endif
+            @endif
+            
+            @if ($errors->any())
+            @foreach ($errors->all() as $error)
+            toastr.error("{{$error}}"); 
+            
+            @endforeach
+            @endif
+    });
+    </script>
 @endsection

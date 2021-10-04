@@ -406,7 +406,19 @@ class AuctionController extends Controller
             $update_wallet = CustomerWallet_Model::create($wallet_arr)->id;
 
             if($update_wallet){
-
+            
+            $aucBid = Auction::where('id',$auction_id)->first();
+            $from   = 1; 
+            $utype  = 1;
+            $to     = $user_id;
+            $ntype  = 'auction_refund';
+            $title  = 'Auction Refund';
+            $desc   = 'The amount refunded for #'.$aucBid->auction_code.' auction';
+            $refId  = $auction_id;
+            $reflink = 'customer/auction';
+            $notify  = 'customer';
+            addNotification($from,$utype,$to,$ntype,$title,$desc,$refId,$reflink,$notify);
+            
             $sale_arr = array();
             $sale_arr['payment_status'] = "refunded";
             $sale_arr['updated_at'] = date("Y-m-d H:i:s");

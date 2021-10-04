@@ -22,7 +22,7 @@
 								<ol class="breadcrumb">
 									<li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Masters</a></li>
 
-									<li class="breadcrumb-item active" aria-current="page"><a href="#">Category List</a></li>
+									<li class="breadcrumb-item active" aria-current="page"><a href="{{ route('admin.category')}}">Category List</a></li>
 									<li class="breadcrumb-item active" aria-current="page"><a href="#">Edit Category</a></li>
 								</ol>
 							</div>
@@ -55,7 +55,7 @@
 									<div class="col-12 mb-3">
 											<div class="card">
                                                 <div class="card-body">
-                                                    <form action="{{url('admin/update-category/'.$category->category_id)}}" method="POST" enctype="multipart/form-data">
+                                                    <form action="{{url('admin/update-category/'.$category->category_id)}}" method="POST"  id="catForm" enctype="multipart/form-data">
 													@csrf
                                                     <?php  $default_lang =DB::table('glo_lang_lk')->where('is_active', 1)->first();
                                                            $category_name=DB::table('cms_content')->where('cnt_id', $category->cat_name_cid)->where('lang_id', $default_lang->id)->first();
@@ -87,7 +87,8 @@
                                                         <div class="col-md-12">
                                                             <div class="form-group">
                                                                 <label class="form-label">Category Description <span class="text-red">*</span></label>
-                                                                <input type="text" class="form-control  @error('category_description') is-invalid @enderror" placeholder="Description" name="category_description" value="{{ $category_desc->content }}">
+                                                                <!--<input type="text" class="form-control  @error('category_description') is-invalid @enderror" placeholder="Description" name="category_description" value="{{ $category_desc->content }}">-->
+                                                                 <textarea class="form-control @error('category_description') is-invalid @enderror" placeholder="Description"  name="category_description">{{ $category_desc->content }}</textarea>
                                                            @error('category_description')
                                                                     <span class="invalid-feedback" role="alert">
                                                                         <strong>{{ $message }}</strong>
@@ -114,12 +115,13 @@
                                                         </div>
                                                         <div class="col-lg-4 col-md-4 col-sm-12">
                                                             <label class="form-label">Change Category Image <span class="text-red">*</span></label>
-                                                            <input type="file" class="dropify" data-height="180" name="category_image" />
+                                                            <input type="file" class="dropify" data-height="180"  accept="image/*" name="category_image" />
+                                                             <p style="color: red" id="errNm1"></p>
                                                         </div>
                                                     </div>
                                                     <div class="col d-flex justify-content-end">
                                                     <a href="{{ route('admin.category')}}" class="mr-2 mt-4 mb-0 btn btn-secondary" >Cancel</a>
-                                                    <button type="submit" class="btn btn-primary mt-4 mb-0" >Submit</button>
+                                                    <button type="submit"  id="frontval" class="btn btn-primary mt-4 mb-0" >Submit</button>
                                                     </div>
                                                 </form>
                                                 </div>
@@ -142,6 +144,7 @@
          <!--INTERNAL Select2 js -->
 		<script src="{{URL::asset('admin/assets/plugins/select2/select2.full.min.js')}}"></script>
 		<script src="{{URL::asset('admin/assets/js/select2.js')}}"></script>
+			<script src="{{URL::asset('admin/assets/js/jquery.validate.min.js')}}"></script>
 	<!-- INTERNAL Popover js -->
 		<script src="{{URL::asset('admin/admin/assets/js/popover.js')}}"></script>
 
@@ -166,6 +169,80 @@ $(document).ready(function () {
   $('#a_cat').addClass("active");
   $('#master').addClass("is-expanded");
     });
-</script>
+    
+    jQuery(document).ready(function(){
 
+
+$("#frontval").click(function(){
+
+$("#catForm").validate({
+	ignore: [],
+rules: {
+
+category_name : {
+required: true
+},
+
+category_description: {
+required: true
+},
+// category_image: {
+
+// required: true
+// }
+
+},
+
+messages : {
+category_name: {
+required: "Category Name is required."
+},
+category_description: {
+required: "Category Description is required."
+},
+category_image: {
+required: "Category Image is required."
+}
+},
+
+
+ errorPlacement: function(error, element) {
+ 	 // $("#errNm1").empty();$("#errNm2").empty();
+ 	 console.log($(error).text());
+            if (element.attr("name") == "category_image" ) {
+            	
+                $("#errNm1").text($(error).text());
+                
+            }else if (element.attr("name") == "product_id" ) {
+                $("#errNm2").text($(error).text());
+                
+            }else {
+               error.insertAfter(element)
+            }
+        },
+
+});
+});
+
+});
+</script>
+<script type="text/javascript">
+    $(document).ready(function(){
+            @if(Session::has('message'))
+            @if(session('message')['type'] =="success")
+            
+            toastr.success("{{session('message')['text']}}"); 
+            @else
+            toastr.error("{{session('message')['text']}}"); 
+            @endif
+            @endif
+            
+            @if ($errors->any())
+            @foreach ($errors->all() as $error)
+            toastr.error("{{$error}}"); 
+            
+            @endforeach
+            @endif
+    });
+    </script>
 @endsection

@@ -1,8 +1,8 @@
-<?php  //  echo '<pre>'; print_r($product); echo '</pre>';  die;
+<?php   // echo '<pre>'; print_r($product); echo '</pre>';  die;
 if($product){ 
     $prices         =   $product->prdPrice;         $prdAssAttrs    =   $product->assignedAttrs($product->id); // echo '<pre>'; print_r($prices); echo '</pre>';
     $id             =   $product->id;               $sellerId       =   $product->seller_id;        $prdType        =       $product->product_type;
-    $catId          =   $product->category_id;      $subCatId       =   $product->sub_category_id;  $brandId        =       $product->brand_id;
+    $catId          =   $product->category_id;      $subCatId       =   $product->sub_category_id;  $brandId        =       $product->brand_id; $tagId        =       $product->tag_id;
     $commi          =   $product->commission;       $approved       =   $product->is_approved;      $apprDate       =       $product->approved_at;
     $status         =   $product->is_active;      if(isset($product->tax)){  $taxId          =   $product->tax->id; }else{ $taxId          =0; }           if(isset($prices)) { $price          =       $prices->price; $sPrice         =   $prices->sale_price; $stDate         =       $prices->sale_start_date; $edDate         =   $prices->sale_end_date;   }else { $price          =      0; $sPrice         =   0; $stDate         =       ""; $edDate         =  "";  } 
     $adminPrd       =   $product->admin_prd_id;             
@@ -11,11 +11,14 @@ if($product){
     $desc           =   getContent($product->desc_cnt_id,$langId);      $content            =       getContent($product->content_cnt_id,$langId);
      if(isset($product->spec_cnt_id)) { $specification            =       getContent($product->spec_cnt_id,$langId);  }else { $specification = '';   } 
     
-    $featured         =   $product->is_featured; $daily_deals         =   $product->daily_deals; 
+    $featured         =   $product->is_featured; $daily_deals         =   $product->daily_deals; $out_of_stock_selling = $product->out_of_stock_selling;
     if($adminPrd    >   0){ $sellCkd = false; $adminCkd = true; }else{  $sellCkd = true; $adminCkd  =   false; }
+    if(isset($dimensions)){  $weight  =   $dimensions->weight; $length  =   $dimensions->length; $width  =   $dimensions->width; $height  =   $dimensions->height; }else{ 
+        $weight  =   $length  =   $width  =   $height  =  ''; } 
 }else{ 
-    $adminPrd = $id =   0; $commi = $prdType = $prdName = $catId = $subCatId = $brandId = $sDesc = $desc = $content = $price = $sPrice = $taxId = $stDate = $edDate = $specification = ''; 
-    $status         =   1;  $featured   = $daily_deals      = 0; $sellerId = $seller->seller_id; $sellCkd = true; $adminCkd = false; $prdAssAttrs = []; $id = 0;
+    $weight  =   $length  =   $width  =   $height  =  '';
+    $adminPrd = $id =   0; $commi = $prdType = $prdName = $catId = $subCatId = $tagId = $brandId = $sDesc = $desc = $content = $price = $sPrice = $taxId = $stDate = $edDate = $specification = ''; 
+    $status         =   1;  $featured   = $daily_deals      = $out_of_stock_selling    = 0; $sellerId = $seller->seller_id; $sellCkd = true; $adminCkd = false; $prdAssAttrs = []; $id = 0;
 }
 if($prdType == 2)   {   $conficLi = ''; }else{ $conficLi = 'no-disp'; } 
 if(isset($variationHist)){

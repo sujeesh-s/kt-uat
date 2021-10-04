@@ -90,7 +90,7 @@
 																			@if($row['avatar'])
 																	<span class="avatar brround avatar-md d-block" style="background-image: url(<?php echo $avatar; ?>)"></span>
 																			@else
-																			<span class="avatar brround avatar-md d-block" ></span>
+																	<span class="avatar brround avatar-md d-block" style="background-image: url(<?php echo url('storage/app/public/no-avatar.png'); ?>)"></span>
 																			@endif
 																			<div class="ml-3 mt-1">
 																				<h6 class=" font-weight-bold"><a href="{{ url('admin/admins-list/view/') }}/{{$row->id}}" >{{ $row->fname." ".$row->lname }} </a></h6>

@@ -37,6 +37,8 @@ use App\Models\SellerInfo;
 use App\Models\SalesOrderPayment;
 use App\Models\SalesOrderShippingStatus;
 use App\Models\UsrNotification;
+use App\Models\SalesOrderRefundPayment;
+use App\Models\SalesOrderReturnShipment;
 use Carbon\Carbon;
 use App\Rules\Name;
 use Validator;
@@ -231,12 +233,12 @@ class AccountController extends Controller
         return $data;
     }
 
-   public function purchase(Request $request)
+    public function purchase(Request $request)
     {
         if($user = validateToken($request->post('access_token')))
         {
             $user_id    =   $user['user_id'];
-            $val        =   [];
+            $val        =   [];  $cdata   =   []; 
             $formData   =   $request->all(); 
             $rules      =   array();
             $rules['lang_id']    = 'required|numeric';
@@ -255,7 +257,8 @@ class AccountController extends Controller
                         foreach($sales  as $row)
                         {
                             $all_items  =   SaleorderItems::where('sales_id',$row->id)->get();
-                            $ship       =   SalesOrderShippingStatus::where('sales_id',$row->id)->first(); 
+                            $ship       =   SalesOrderShippingStatus::where('sales_id',$row->id)->orderBy('created_at', 'desc')->first(); 
+                            $ord        =   SalesOrderCancel::where('sales_id',$row->id)->orderBy('created_at', 'desc')->first();
                             $adddr      =   SalesOrderAddress::where('sales_id',$row->id)->first();
                             $seller     =   SellerInfo::where('seller_id',$row->seller_id)->first();
                             foreach($all_items  as $items)
@@ -290,9 +293,43 @@ class AccountController extends Controller
                                 {
                                     $data['delivery_status']   =   'Pending';
                                 }
-                                $data['sold_by']            =   $seller->fname;
-                                $data['track_order']       =   '';
-                                $saddr['address_type'] = $adddr->stype->usr_addr_typ_name;
+                              
+                                $data['sold_by']        =   $seller->fname;
+                                $data['track_order']    =   '';
+                                $data['order_status']   =   $row->order_status;
+                                $data['payment_status'] =   $row->payment_status;
+                                $data['cancel_order_detail'] = array();
+                                if($row->order_status == 'cancel_initiated')
+                                {
+                                     if($ord)
+                                        {
+                                            $ordnote = SalesOrderCancelNote::where('cancel_id',$ord->id)->first();
+                                            $cdata['cancel_id']      =   $ord->id;
+                                            $cdata['cancel_title']   =   $ordnote->title;
+                                            $cdata['cancel_notes']   =   $ordnote->note;
+                                            $data['cancel_order_detail'] =  $cdata;
+                                        }
+                                        else
+                                        {
+                                             $data['cancel_order_detail'] =  [];
+                                        }
+                                       
+                                }
+                                
+                                $return_order = SalesOrderReturn::where('sales_item_id',$items->id)->where('is_deleted',0)->first();
+            
+                                if($return_order)
+                                {
+                                    $rtrn['status']      =   $return_order->status;
+                                    $rtrn['id']          =   $return_order->id;
+                                    $rtrn['payment_status']     =   $return_order->payment_status;
+                                    $data['return_detail']       =       $rtrn;
+                                }
+                                else
+                                {
+                                    $data['return_detail']       =       [];
+                                }
+                                 $saddr['address_type'] = $adddr->stype->usr_addr_typ_name;
                                  $saddr['name']         = $adddr->s_name; 
                                  $saddr['phone']        = $adddr->s_phone; 
                                  $saddr['email']        = $adddr->s_email; 
@@ -304,8 +341,7 @@ class AccountController extends Controller
                                  $saddr['city']         = $adddr->scity->city_name; 
                                  $saddr['latitude']     = $adddr->s_latitude; 
                                  $saddr['longitude']    = $adddr->s_longitude;
-                                 $data['shippping_address'][] =  $saddr;
-
+                                 $data['shipping_address'] =  $saddr;
                                 $val[] = $data;
                              }
                         }
@@ -343,6 +379,7 @@ class AccountController extends Controller
                         $pay      =   SalesOrderPayment::where('sales_id',$request->sale_id)->first();
                         $seller   =   SellerInfo::where('seller_id',$sales->seller_id)->first();
                         $ship     =   SalesOrderShippingStatus::where('sales_id',$request->sale_id)->first();
+                        $ord      =   SalesOrderCancel::where('sales_id',$sales->id)->orderBy('created_at', 'desc')->first();
                         $data['order_id']          =   $sales->order_id;
                         $data['order_date']        =   date('Y-m-d',strtotime($sales->created_at));
                         $data['order_time']        =   date('g:i a',strtotime($sales->created_at));
@@ -371,6 +408,24 @@ class AccountController extends Controller
                         }
                         
                         $data['sold_by']            =   $seller->fname;
+                        $data['order_status']       =   $sales->order_status;
+                        $data['cancel_order_detail'] = array();
+                        if($sales->order_status == 'cancel_initiated')
+                        {
+                             if($ord)
+                                {
+                                    $ordnote = SalesOrderCancelNote::where('cancel_id',$ord->id)->first();
+                                    $cdata['cancel_id']      =   $ord->id;
+                                    $cdata['cancel_title']   =   $ordnote->title;
+                                    $cdata['cancel_notes']   =   $ordnote->note;
+                                     $data['cancel_order_detail'] =  $cdata;
+                                }
+                                else
+                                {
+                                     $data['cancel_order_detail'] =  [];
+                                }
+                               
+                        }
                         $all_items      =   SaleorderItems::where('sales_id',$sales->id)->get(); 
                         foreach($all_items  as $items)
                         {
@@ -385,6 +440,19 @@ class AccountController extends Controller
                             $prd['currency']          =   getCurrency()->name;
                             $prd['quantity']          =   $items->qty;
                             $prd['product_image']     =   $this->get_product_image($products->id);
+                            $return_order = SalesOrderReturn::where('sales_item_id',$items->id)->where('is_deleted',0)->first();
+                            // $data['return_detail']       =       array();
+                            if($return_order)
+                            {
+                                $rtrn['status']      =   $return_order->status;
+                                $rtrn['id']          =   $return_order->id;
+                                $rtrn['payment_status']     =   $return_order->payment_status;
+                                $prd['return_detail']       =       $rtrn;
+                            }
+                            else
+                            {
+                                $prd['return_detail']       =       [];
+                            }
                             $data['products'][]       =       $prd;
                          }
                          $adddr   =   SalesOrderAddress::where('sales_id',$request->sale_id)->first();
@@ -400,7 +468,7 @@ class AccountController extends Controller
                          $baddr['city']         = $adddr->bcity->city_name; 
                          $baddr['latitude']     = $adddr->latitude; 
                          $baddr['longitude']    = $adddr->longitude;
-                         $data['billing_address'][] =  $baddr;
+                         $data['billing_address'] =  $baddr;
 
                          $saddr['address_type'] = $adddr->stype->usr_addr_typ_name;
                          $saddr['name']         = $adddr->s_name; 
@@ -414,7 +482,7 @@ class AccountController extends Controller
                          $saddr['city']         = $adddr->scity->city_name; 
                          $saddr['latitude']     = $adddr->s_latitude; 
                          $saddr['longitude']    = $adddr->s_longitude;
-                         $data['shippping_address'][] =  $saddr;
+                         $data['shipping_address'] =  $saddr;
 
                          return array('httpcode'=>'200','status'=>'success','message'=>'Order Detail','data'=>['order_detail'=>$data]);
                     }
@@ -435,7 +503,7 @@ class AccountController extends Controller
             $val        =   [];
             $formData   =   $request->all(); 
             $rules      =   array();
-            $rules['sale_id']   = 'required|numeric';
+            $rules['sale_id']    = 'required|numeric';
             $rules['lang_id']    = 'required|numeric';
             $validator  =   Validator::make($request->all(), $rules);
             if ($validator->fails()) 
@@ -509,7 +577,7 @@ class AccountController extends Controller
                          $baddr['city']         = $adddr->bcity->city_name; 
                          $baddr['latitude']     = $adddr->latitude; 
                          $baddr['longitude']    = $adddr->longitude;
-                         $data['billing_address'][] =  $baddr;
+                         $data['billing_address'] =  $baddr;
 
                          $saddr['address_type'] = $adddr->stype->usr_addr_typ_name;
                          $saddr['name']         = $adddr->s_name; 
@@ -523,9 +591,9 @@ class AccountController extends Controller
                          $saddr['city']         = $adddr->scity->city_name; 
                          $saddr['latitude']     = $adddr->s_latitude; 
                          $saddr['longitude']    = $adddr->s_longitude;
-                         $data['shippping_address'][] =  $saddr;
+                         $data['shipping_address'] =  $saddr;
 
-                         return array('httpcode'=>'200','status'=>'success','message'=>'Order Detail','data'=>['order_detail'=>$data]);
+                         return array('httpcode'=>'200','status'=>'success','message'=>'invoice','data'=>['order_detail'=>$data]);
                     }
                     else
                     {
@@ -834,9 +902,19 @@ class AccountController extends Controller
             $user_id    =   $user['user_id'];
             $formData   =   $request->all(); 
             $rules      =   array();
-            $rules['cancel_id']       = 'required|numeric';
-            $rules['status']        = 'required|string';
-            $rules['response_note'] = 'required|string';
+            $rules['cancel_id']     = 'required|numeric';
+            $rules['status']        = 'required|numeric';
+            if($request->status == 1)
+            {
+                $rules['refund_mode']        = 'required|numeric';
+                if($request->refund_mode == 2)
+                {
+                    $rules['bank_name']        = 'required|string';
+                    $rules['account_number']   = 'required|string';
+                    $rules['branch_name']      = 'required|string';
+                    $rules['ifsc_code']        = 'required|string';
+                }
+            }
             $validator  =   Validator::make($request->all(), $rules);
             if ($validator->fails()) 
                 {
@@ -848,19 +926,25 @@ class AccountController extends Controller
                     $cancels = SalesOrderCancel::where('id',$formData['cancel_id'])->where('role_id',3)->where('is_deleted',0)->first();
                     if($cancels)
                     {
-                        if($formData['status'] == 2)
+                        if($formData['status'] == 1)
                         {
                             $status = 'accepted';
+                            $ord_status = 'cancelled';
                         }
                         else
                         {
                             $status = 'rejected';
+                            $ord_status = 'pending';
                         }
-                        SalesOrder::where('id',$cancels->sales_id)->update(['cancel_process'=>$formData['status']]);
+                        $salOrd = SalesOrder::where('id',$cancels->sales_id)->update(['order_status'=>$ord_status,'cancel_process'=>$formData['status']]);
+                        $sales = SalesOrder::where('id',$cancels->sales_id)->first();
                         SalesOrderCancel::where('id',$formData['cancel_id'])->update([
                         'status' => $status]);
-                        SalesOrderCancelNote::where('cancel_id',$formData['cancel_id'])->update([
-                        'response' => $formData['response_note']]);
+                        if($formData['status'] == 1)
+                        {
+                          SalesOrderRefundPayment::create([
+                         'ref_id' => $formData['cancel_id'],'source' =>'cancel','refund_mode' => $formData['refund_mode'],'bank_name' => $formData['bank_name'],'account_number' => $formData['account_number'],'branch_name' => $formData['branch_name'],'ifsc_code' => $formData['ifsc_code']]);
+                        }
                         return array('httpcode'=>'200','status'=>'success','message'=>'Response sent','data'=>['message' =>'Your cancel response sent successfully!']);
                     }
                     else
@@ -1355,8 +1439,11 @@ class AccountController extends Controller
             $user_id    =   $user['user_id'];
             $formData   =   $request->all(); 
             $rules      =   array();
-            $rules['sale_id']     = 'required|numeric';
-            $rules['reason']      = 'required|string';
+            $rules['sale_id']      = 'required|numeric';
+            $rules['quantity']     = 'required|numeric|min:1';
+            $rules['product_id']   = 'required|numeric';
+            $rules['reason']       = 'required|string';
+            // $rules['message']      = 'required|string';
             $validator  =   Validator::make($request->all(), $rules);
             if ($validator->fails()) 
                 {
@@ -1368,14 +1455,31 @@ class AccountController extends Controller
                     $sales =  SalesOrder::where('cust_id',$user_id)->where('id',$formData['sale_id'])->first(); 
                     if($sales)
                     {
-                        SalesOrder::where('id',$formData['sale_id'])->update(['order_status'=>'return_initiated']);
-                        $ordercancel = SalesOrderReturn::create(['sales_id' => $formData['sale_id'],
-                        'user_id' => $user_id,'reason' =>  $formData['reason']]);
-                        SalesOrderReturnStatus::create(['sales_id' => $formData['sale_id'],
-                        'return_id' => $ordercancel->id,
-                        'status' => 'pending']);
-                        return array('httpcode'=>'200','status'=>'success','message'=>'Request sent','data'=>['message' =>'Your return request sent successfully!']);
+                        $prds =  SaleorderItems::where('sales_id',$formData['sale_id'])->where('prd_id',$formData['product_id'])->first();
+                        if($prds)
+                        {
+                            if($formData['quantity'] > $prds->qty)
+                            {
+                                return array('httpcode'=>'400','status'=>'error','message'=>'Quantity exceeds','data'=>['message' =>'Quantity exceeds!']);
+                            }
+                            else
+                            {
+                                $amt = $prds->price * $prds->qty; 
+                                $orderreturn = SalesOrderReturn::create(['sales_id' => $formData['sale_id'],
+                                'user_id' => $user_id,'sales_item_id' => $prds->id,'prd_id' => $formData['product_id'],'qty' => $formData['quantity'],'amount' =>  $amt,'reason' =>  $formData['reason'],'desc' =>  $formData['message'],'issue_item'=>$formData['issue_item'],'status'=>"return_initiated"]);
+                                SalesOrderReturnStatus::create(['sales_id' => $formData['sale_id'],
+                                'return_id' => $orderreturn->id,
+                                'status' => 'return_initiated']);
+                                return array('httpcode'=>'200','status'=>'success','message'=>'Request sent','data'=>['message' =>'Your return request sent successfully!','return_id' =>$orderreturn->id]);
+                            }
+                       
+                        }
+                        else
+                        {
+                             return array('httpcode'=>'400','status'=>'error','message'=>'Not Found','data'=>['message' =>'Product not found!']);
+                        }
                     }
+                       
                     else
                     {
                         return array('httpcode'=>'400','status'=>'error','message'=>'Not Found','data'=>['message' =>'Order not found!']);
@@ -1594,6 +1698,65 @@ class AccountController extends Controller
                    
             return array('httpcode'=>'200','status'=>'success','message'=>'All notifications','data'=>['notifications'=>$val]);
                 
+        }else{ return invalidToken(); }
+    }
+     public function return_shipment(Request $request)
+    {
+        if($user = validateToken($request->post('access_token')))
+        {
+            $user_id    =   $user['user_id'];
+            $formData   =   $request->all(); 
+            $rules      =   array();
+            $rules['return_id']            = 'required|numeric';
+            $rules['shipment_detail']      = 'required';
+            $rules['shipment_bill']        = 'required';
+            $rules['refund_mode']          = 'required|numeric';
+            if($request->refund_mode == 2)
+            {
+                $rules['bank_name']        = 'required|string';
+                $rules['account_number']   = 'required|string';
+                $rules['branch_name']      = 'required|string';
+                $rules['ifsc_code']        = 'required|string';
+            }
+            $validator  =   Validator::make($request->all(), $rules);
+            if ($validator->fails()) 
+                {
+                    foreach($validator->messages()->getMessages() as $k=>$row){ $error[$k] = $row[0]; $errorMag[] = $row[0]; }  
+                    return array('httpcode'=>'400','status'=>'error','message'=>$errorMag[0],'data'=>array('errors' =>(object)$error));
+                }
+            else
+                { 
+                    $return = SalesOrderReturn::where('id',$formData['return_id'])->where('is_deleted',0)->first();
+                    if($return)
+                    {
+                        if($request->hasFile('shipment_bill'))
+                        {
+                        $file=$request->file('shipment_bill');
+                        $extention=$file->getClientOriginalExtension();
+                        $filename='bill_'.$formData['return_id'].'.'.$extention;
+                        $file->move(('uploads/storage/app/public/shipment_bills/'),$filename);
+                        }
+                        else
+                        {
+                            $filename='';
+                        }
+                        SalesOrderReturn::where('id',$formData['return_id'])->update(['status'=>'shipment_initiated']);
+                        SalesOrderReturnShipment::create(['return_id' => $formData['return_id'],'description' => $formData['shipment_detail'],'document' => 'app/public/shipment_bills/'.$filename]);
+
+                          SalesOrderRefundPayment::create([
+                         'ref_id' => $formData['return_id'],'source' =>'return','refund_mode' => $formData['refund_mode'],'bank_name' => $formData['bank_name'],'account_number' => $formData['account_number'],'branch_name' => $formData['branch_name'],'ifsc_code' => $formData['ifsc_code']]);
+
+                         SalesOrderReturnStatus::create(['sales_id' => $return->sales_id,
+                                'return_id' => $formData['return_id'],
+                                'status' => 'shipment_initiated']);
+
+                        return array('httpcode'=>'200','status'=>'success','message'=>'Response sent','data'=>['message' =>'Your shipment details sent successfully!']);
+                    }
+                    else
+                    {
+                        return array('httpcode'=>'400','status'=>'error','message'=>'Not Found','data'=>['message' =>'Return request not found!']);
+                    }
+                }
         }else{ return invalidToken(); }
     }
 }

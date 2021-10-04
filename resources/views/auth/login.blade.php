@@ -1,5 +1,6 @@
 @extends('layouts.master2')
 @section('css')
+<style> #adminLogin .error{ color: #fff; }</style>
 @endsection
 @section('content')
 <div class="page">
@@ -10,9 +11,9 @@
 							<div class="">
 								<div class="text-white">
 									<div class="card-body">
-										<h2 class="display-4 mb-2 font-weight-bold error-text text-center"><strong>KANGTAO Login</strong></h2>
+										<h2 class="display-4 mb-2 font-weight-bold error-text text-center"><strong>{{ config('settings.app_name') }} Login</strong></h2>
 										<h4 class="text-white-80 mb-7 text-center">Sign In to your account</h4>
-                                                                                <form method="POST" action="{{ url('admin/login') }}">
+                                                                                <form method="POST" id="adminLogin" action="{{ url('admin/login') }}">
                         @csrf
 										<div class="row">
 											<div class="col-9 d-block mx-auto">
@@ -48,14 +49,16 @@
                                                 <div class="row">
 												<div class="col-12">
 												<label class="custom-control custom-checkbox">
-													<input type="checkbox" class="custom-control-input" name="example-checkbox2" value="option2">
-													<span class="custom-control-label">Remember me</span>
+                                                    <input class="custom-control-input" type="checkbox" name="remember" id="remember" {{ old('remember') ? 'checked' : '' }}>
+                                                    <label class="custom-control-label" for="remember" >
+                                                      {{ __('Remember Me') }}
+                                                     </label>
 												</label>
 											  </div>
 										     </div>
 												<div class="row">
 													<div class="col-12">
-														<button type="submit" class="btn btn-secondary btn-block px-4" style="background:#fff; color:#ff0000 !important; padding:10px;">Login</button>
+														<button type="submit" class="btn btn btn-block px-4" style="background:#fff; color:#ff0000 !important; padding:10px;">Login</button>
 													</div>
 													<div class="col-12 text-center">
 														<a href="{{ url('/password/reset')}}" class="btn btn-link box-shadow-0 px-0 text-white-80">Forgot password?</a>

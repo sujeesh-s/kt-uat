@@ -217,7 +217,7 @@
             processData: false,
             success: function (data) { 
               $('#adminForm #save_btn').attr('disabled',false); $('#adminForm #save_btn').text('Save');
-              if($('#adminForm #id').val() > 0){ var msg = 'Atribute updated successfully!'; }else{ msg = 'Atribute added successfully!'; }
+              if($('#adminForm #id').val() > 0){ var msg = 'Atribute updated successfully!'; }else{ msg = 'Atribute created successfully!'; }
               $('#pg_content').html(data); $('#dtl_form').hide(); $('#pg_content').fadeIn(700); // $('#list_form').html(data); 
               toastr.success(msg);
   return false;

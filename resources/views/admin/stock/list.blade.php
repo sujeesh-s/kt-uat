@@ -3,7 +3,7 @@
 @section('page-header')
 @endsection
 @section('content')
-<div id="list_form"> </div>
+<div id="list_form"  style="display:none;"> @include('admin.stock.list.content')</div>
 <div id="content_detail">@include('admin.stock.list.content')</div>
 <div id="dtl_form">  </div>
 <div id="modal_stock" class="d-none">@include('admin.stock.stock_form')</div>

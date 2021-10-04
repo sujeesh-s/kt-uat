@@ -18,6 +18,7 @@ use App\Models\ProductType;
 use App\Models\PrdPrice;
 use App\Models\PrdImage;
 use App\Models\PrdStock;
+use App\Models\Store;
 use App\Models\Language;
 use App\Models\CmsContent;
 use App\Models\PrdAttribute;
@@ -31,6 +32,8 @@ use App\Models\PrdOffer;
 use App\Models\PrdReview;
 use App\Models\VariableProdHist;
 use App\Models\ProductVideo;
+use App\Models\ProdDimension;
+use App\Models\Tag;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
@@ -46,7 +49,7 @@ class SellerProductController extends Controller{
         $data['menuGroup']          =   'sellerGroup';
         $data['menu']               =   'product';
         $data['active']             =   $data['seller'] = $data['category'] = '';
-        $data['sellers']            =   getDropdownData(SellerInfo::where('is_approved',1)->where('is_deleted',0)->get(),'seller_id','fname');
+        $data['sellers']            =   getDropdownData(Store::where('is_active',1)->where('is_deleted',0)->get(),'seller_id','business_name');
         $data['categories']         =   getDropdownData(Category::where('is_active',1)->where('is_deleted',0)->get(),'category_id','cat_name');
         $products                   =   Product::where('is_approved',1)->where('visible',1)->where('is_deleted',0);
         if(isset($post->active) &&  $post->active != ''){ 
@@ -67,20 +70,78 @@ class SellerProductController extends Controller{
     }
     
     public function productRequests(Request $request){  
-        $post                       =   (object)$request->post();
+        $post                       =   (object)$request->post(); $res = [];
         if(isset($post->viewType))  {   $viewType = $post->viewType; }else{ $viewType = ''; }
         $data['title']              =   'Approval Requests';
         $data['menuGroup']          =   'productGroup';
         $data['menu']               =   'product_approval';
         $data['active']             =   '';
         $data['sellers']            =   getDropdownData(SellerInfo::where('is_approved',1)->where('is_deleted',0)->get(),'seller_id','fname');
-        $products                   =   Product::where('is_approved',0)->where('visible',1)->where('is_deleted',0);
-        if(isset($post->active) &&  $post->active != ''){ 
-            $products               =   $products->where('is_active',$post->active); 
-            $data['active']         =   $post->active;
+        $data['categories']         =   getDropdownData(Category::where('is_active',1)->where('is_deleted',0)->get(),'category_id','cat_name');
+        $data['subCats']            =   getDropdownData(Subcategory::where('is_active',1)->where('is_deleted',0)->get(),'subcategory_id','subcategory_name');
+        $products                   =   Product::where('is_approved',0)->where('is_deleted',0);
+        if(isset($request->approve) &&  $request->approve != ''){ 
+            $products               =   $products->where('is_approved',$request->approve); 
+            $data['approve']        =   $request->approve;
+        }
+        if(isset($request->seller)  &&  $request->seller != ''){ 
+            $products               =   $products->where('seller_id',$request->seller); 
+            $data['seller']         =   $request->seller;
+        }
+        if(isset($request->category)&&  $request->category != ''){ 
+            $products               =   $products->where('category_id',$request->category); 
+            $data['category']       =   $request->category;
+        }
+        if(isset($request->sub_cat) &&  $request->sub_cat != ''){ 
+            $products               =   $products->where('category_id',$request->sub_cat); 
+            $data['category']       =   $request->sub_cat;
+        }
+        if(isset($post->vType)      ==  'ajax'){
+           $search                  =   (isset($post->search['value']))? $post->search['value'] : ''; 
+           $start                   =   (isset($post->start))? $post->start : 0; 
+           $length                  =   (isset($post->length))? $post->length : 10; 
+           $draw                    =   (isset($post->draw))? $post->draw : ''; 
+           $totCount                =   $products->count(); $filtCount  =   $products->count();
+           if($search != ''){
+                $products           =   $products->where(function($qry) use ($search){
+                                            $qry->where('name', 'LIKE', '%'.$search.'%');
+                                            $qry->orWhereIn('seller_id', $this->getPrdSellerIds($search));
+                                            $qry->orWhereIn('category_id', $this->getPrdCatIds($search));
+                                            $qry->orWhereIn('sub_category_id', $this->getPrdSubCatIds($search));
+                                        });
+                $filtCount          =   $products->count();
+           }
+           if($length>0){$products  =   $products->offset($start)->limit($length); }
+           $products                =   $products->orderBy('id','desc')->get();
+           if($products){ foreach   (   $products as $row){ $action = '';
+               if($row->is_active   ==  1){ $checked    = 'checked="checked"'; $act = 'Active'; }else{ $checked = '';  $act = 'Inactive'; }
+               $val['id']           =   '';                                
+               $val['name']         =   $row->name;
+               $val['seller']       =   $row->seller->store($row->seller_id)->business_name;      
+               $val['cat']          =   $row->category->cat_name;      
+               $val['sub_cat']      =   $row->subCategory->subcategory_name;
+               $val['created_at']   =   date('d M Y, g:i a',strtotime($row->created_at)); 
+               $val['status']       =   '<div class="switch" data-search="'.$act.'">
+                                            <input class="switch-input status-btn" id="status-'.$row->id.'" type="checkbox" '.$checked.' name="status">
+                                            <label class="switch-paddle" for="status-'.$row->id.'">
+                                                <span class="switch-active" aria-hidden="true">Active</span><span class="switch-inactive" aria-hidden="true">Inactive</span>
+                                            </label>
+                                        </div>';
+                $action             =   '<button id="editBtn-'.$row->id.'" class="mr-2 btn btn-info btn-sm editBtn"><i class="fa fa-edit mr-1"></i><span>Edit</span></button>
+                                        <button id="approve-'.$row->id.'" class="mr-2 btn btn-success btn-sm approve"><i class="fa fa-check mr-1"></i>Approve</button>';
+               $val['action']       =   $action; $res[] = $val;  
+           } }
+           $returnData = array(
+			"draw"            => $draw,   
+			"recordsTotal"    => $totCount,  
+			"recordsFiltered" => $filtCount,
+			"data"            => $res   // total data array
+			);
+            return $returnData;
         }
         $data['products']           =   $products->orderBy('id','desc')->get();
         if($viewType == 'ajax') {   return view('admin.seller_product_request.list',$data); }else{ return view('admin.seller_product_request.page',$data); }
+
     }
     
     public function newProducts()
@@ -112,12 +173,14 @@ class SellerProductController extends Controller{
         }
         $data['product']            =   $product;
         $data['videos']         =  ProductVideo::where('prd_id',$id)->where("is_deleted",0)->first();
+        $data['dimensions']         =  ProdDimension::where('prd_id',$id)->where("is_deleted",0)->first();
         $data['variationHist']      =   VariableProdHist::where('prd_id',$id)->where('seller_id',$sellerId)->where('is_deleted',0)->first(); 
         if($lang    >   0)          {   $data['langId'] =   $lang; }else{ $data['langId'] = Language::where('is_active',1)->where('is_deleted',0)->first()->id; }
         if($type                    ==  'new'){ $data['title']   =   'View Product Detail'; }
         $data['categories']         =   getDropdownData(Category::where('is_deleted',0)->get(),'category_id','cat_name');
         $data['sub_cats']           =   getDropdownData(Subcategory::where('is_deleted',0)->get(),'subcategory_id','subcategory_name');
         $data['brands']             =   getDropdownCmsData(Brand::where('is_active',1)->where('is_deleted',0)->get(),'id','brand_name_cid');
+        $data['tags']             =   getDropdownCmsData(Tag::where('is_active',1)->where('is_deleted',0)->get(),'id','tag_name_cid');
         $data['taxes']              =   getDropdownCmsData(Tax::where('is_active',1)->where('is_deleted',0)->get(),'id','tax_name_cid');
         $data['languages']          =   getDropdownData(Language::where('is_active',1)->where('is_deleted',0)->get(),'id','glo_lang_name');
         if($sellerId                >   0){ $data['seller'] = SellerInfo::where('seller_id',$sellerId)->first(); }
@@ -239,11 +302,13 @@ class SellerProductController extends Controller{
 
     function saveProduct(Request $request){
         $post                   =   (object)$request->post(); 
-        $prd                    =   $post->prd; unset($prd['specification']);
+        $prd                    =   $post->prd; 
+         $specification = @$prd['specification']; unset($prd['specification']);
         $price                  =   $post->price; 
        if($post->prd_type ==2) {
            $stock                  =   $post->stock; 
         $sku                  =   $post->sku; }
+        $dimension                  =   $post->dimension; 
         $attrs                  =   array();//  (object)$post->attr; 
         if(isset($post->assosi)){   $assosi =   (object)$post->assosi; }else{ $assosi = false; }
         $images                 =   $request->file('image'); 
@@ -453,6 +518,9 @@ class SellerProductController extends Controller{
             $prd['product_type']=   $post->prd_type; $prd['seller_id']   =   auth()->user()->id; 
             $prdId              =   Product::create($prd)->id; $price['created_by']    =   auth()->user()->id;
             $price['prd_id']    =   $prdId; unset($price['tax']); PrdPrice::create($price);
+            
+            $dimension['prd_id']    =   $prdId; $dimension['created_by']    =   auth()->user()->id;
+            ProdDimension::create($dimension);
             $stockId            =   PrdStock::create(['seller_id'=>$post->seller_id,'prd_id'=>$prdId,'qty'=>0,'rate'=>$post->price['price'],'created_by'=>auth()->user()->id]);
             }
 
@@ -657,6 +725,15 @@ class SellerProductController extends Controller{
 
             }else {
             $prdId              =   $post->id; Product::where('id',$prdId)->update($prd); $price['created_by']    =   auth()->user()->id; 
+            $prdDimensions           =   ProdDimension::where('prd_id',$prdId)->where('is_deleted',0)->orderBy('id','desc')->first();
+            if(isset($prdDimensions)) {
+             $dimension['updated_at'] = date("Y-m-d H:i:s"); 
+             ProdDimension::where('prd_id',$prdId)->update($dimension);
+            }else {
+               $dimension['prd_id']    =   $prdId; $dimension['created_by']    =   auth()->user()->id;
+            ProdDimension::create($dimension); 
+            }
+            
             $prdPrice           =   PrdPrice::where('prd_id',$prdId)->where('is_deleted',0)->orderBy('id','desc')->first();
             if($price['price']  !=  $prdPrice->price || $price['sale_price']  !=  $prdPrice->sale_price || $price['sale_start_date']  !=  $prdPrice->sale_start_date || $price['sale_end_date']  !=  $prdPrice->sale_end_date){
                 $price['prd_id']=   $prdId; unset($price['tax']); PrdPrice::create($price);
@@ -678,7 +755,7 @@ class SellerProductController extends Controller{
         //         }else{ $prdAttr['updated_by'] = auth()->user()->id; AssignedAttribute::create($prdAttr); }
         //     }
         // } }
-        $cmsContent             =   ['name_cnt_id'=>$name,'short_desc_cnt_id'=>$sDesc,'desc_cnt_id'=>$desc,'content_cnt_id'=>$content];
+        $cmsContent             =   ['name_cnt_id'=>$name,'short_desc_cnt_id'=>$sDesc,'desc_cnt_id'=>$desc,'content_cnt_id'=>$content,'spec_cnt_id'=>$specification];
         if($post->id > 0)       {   $product = Product::where('id',$post->id)->first(); }else{ $product = false; }
         foreach($cmsContent     as  $k=>$content){ 
             if($product)        {   $cId = $product->$k; }else{ $cId = 0 ; }
@@ -945,5 +1022,43 @@ class SellerProductController extends Controller{
         
        
         if($offrId){   return      back()->with('success',$msg); }else{ return back()->with('error','Somthing went wrong. Plese try again after some time.'); }
+    }
+      function editorImage(Request $request){
+        $input = $request->all();
+        $image = $input['image']; 
+        
+        $imgName            =   time().'.'.$image->extension();
+        $path               =   '/app/public/products/editor/';
+        
+        $img                =   Image::make($image->path());
+        
+        $destinationPath    =   storage_path($path);
+        $image->move($destinationPath, $imgName);
+        $image_url = $path.$imgName; 
+        $image_url = url('storage/'.$image_url);
+        return $image_url;
+       
+    }
+    
+    function deletePrdImg(Request $request){
+        $res                    =   PrdImage::where('id',$request->post('imgId'))->where('is_deleted',0)->update(['is_deleted'=>1]);
+        if($res){ return 'success'; }else{ return 'error'; }
+    }
+    
+    function subCategories($catId=0){
+        return getDropdownData(Subcategory::where('is_deleted',0)->where('category_id',$post->category)->get(),'subcategory_id','subcategory_name');
+    }
+    
+    function getPrdSellerIds($keyword){
+        $query              =   Store::where('business_name', 'LIKE', '%'.$keyword.'%')->where('is_deleted',0); $ids = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $ids[]    =   $row->seller_id; }}return $ids; 
+    }
+    function getPrdCatIds($keyword){
+        $query              =   Category::where('cat_name', 'LIKE', '%'.$keyword.'%')->where('is_deleted',0); $ids = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $ids[]    =   $row->category_id; }}return $ids; 
+    }
+    function getPrdSubCatIds($keyword){
+        $query              =   Subcategory::where('subcategory_name', 'LIKE', '%'.$keyword.'%')->where('is_deleted',0); $ids = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $ids[]    =   $row->subcategory_id; }}return $ids; 
     }
 }

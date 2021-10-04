@@ -3,7 +3,7 @@
         <h4 class="page-title mb-0">{{$title}}</h4>
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Seller Management</a></li>
-            @if($sellerId > 0)
+            @if(isset($sellerId) && $sellerId > 0)
             <li class="breadcrumb-item"><a href="#" id="bc_list" data-seller="{{$sellerId}}"><i class="fe fe-grid mr-2 fs-14"></i>Seller Settlement</a></li>
             @endif
             <li class="breadcrumb-item active" aria-current="page"><a href="#">{{$title}}</a></li>

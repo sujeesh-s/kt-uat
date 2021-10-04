@@ -33,18 +33,67 @@ use Session;
 class SellerController extends Controller{
     public function __construct(){ $this->middleware('auth:admin'); }
     public function sellers(Request $request){ 
-        $post                       =   (object)$request->post();
+        $post                       =   (object)$request->post(); $res = []; $action = '';
         if(isset($post->viewType))  {   $viewType = $post->viewType; }else{ $viewType = ''; }
         $data['title']              =   'Seller List';
         $data['menuGroup']          =   'userGroup';
         $data['menu']               =   'seller';
         $data['active']             =   '';
         $sellers                    =   SellerInfo::where('is_approved',1)->where('is_deleted',0);
-        if(isset($post->active)     &&  $post->active != ''){ 
-            $attributes             =   $sellers->where('is_active',$post->active); 
-            $data['active']         =   $post->active;
+        if(isset($request->active)     &&  $request->active != ''){ 
+            $sellers                =   $sellers->where('is_active',$request->active); 
+            $data['active']         =   $request->active;
         }
-        $data['sellers']            =   $sellers->orderBy('id','desc')->get();
+        if(isset($post->vType)       ==  'ajax'){
+           $search                  =   (isset($post->search['value']))? $post->search['value'] : ''; 
+           $start                   =   (isset($post->start))? $post->start : 0; 
+           $length                  =   (isset($post->length))? $post->length : 10; 
+           $draw                    =   (isset($post->draw))? $post->draw : ''; 
+           $totCount                =   $sellers->count(); $filtCount  =   $sellers->count();
+           if($search != ''){
+                $sellers            =   $sellers->where(function($qry) use ($search){
+                                            $qry->whereIn('seller_id', $this->searchStoreSellerIds($search,'business_name'));
+                                            $qry->orWhereIn('seller_id', $this->searchStoreSellerIds($search,'store_name'));
+                                            $qry->orWhereIn('seller_id', $this->searchTelecomSellerIds($search));
+                                        });
+                $filtCount          =   $sellers->count();
+           }
+           if($length > 0){$sellers =   $sellers->offset($start)->limit($length); }
+           $activities              =   $sellers->orderBy('id','desc')->get();
+           if($activities){ foreach (   $activities as $row){
+               if($row->is_active   ==  1){ $checked    = 'checked="checked"'; $act = 'Active'; }else{ $checked = '';  $act = 'Inactive'; }
+               if($row->store($row->seller_id)->service_status  ==  1){ $sChecked    = 'checked="checked"'; }else{ $sChecked = ''; }
+               $val['id']           =   '';                                 $val['store_name']      =   $row->store($row->seller_id)->store_name;
+               $val['business_name']=   '<a id="dtlBtn-'.$row->seller_id.'" class="font-weight-bold viewDtl">'.$row->store($row->seller_id)->store_name.'</a>';
+               $val['email']        =   $row->sellerMst->teleEmail->value;      $val['phone']       =   $row->sellerMst->telePhone->value;
+               $val['created_at']   =   date('d M Y, g:i a',strtotime($row->created_at)); 
+               $val['status']       =   '<div class="switch" data-search="'.$act.'">
+                                            <input class="switch-input status-btn" id="status-'.$row->sellerMst->id.'" type="checkbox" '.$checked.' name="status">
+                                            <label class="switch-paddle" for="status-'.$row->sellerMst->id.'">
+                                                <span class="switch-active" aria-hidden="true">Active</span><span class="switch-inactive" aria-hidden="true">Inactive</span>
+                                            </label>
+                                        </div>';
+               $val['service_status']=  '<div class="switch" data-search="'.$act.'">
+                                            <input class="switch-input service-status-btn" id="service-status-'.$row->sellerMst->id.'" type="checkbox" '.$sChecked.' name="status">
+                                            <label class="switch-paddle" for="service-status-'.$row->sellerMst->id.'">
+                                                <span class="switch-active" aria-hidden="true">Active</span><span class="switch-inactive" aria-hidden="true">Inactive</span>
+                                            </label>
+                                        </div>';
+                if(checkPermission('admin/sellers','edit') == true){
+                    $action         .=   '<button id="editBtn-'.$row->sellerMst->id.'" class="mr-2 btn btn-info btn-sm editBtn"><i class="fa fa-edit mr-1"></i>Edit</button>';
+                }if(checkPermission('admin/sellers','delete') == true){
+                    $action         .=   '<button id="delBtn-'.$row->sellerMst->id.'" class="mr-2 btn btn-secondary btn-sm delBtn"><i class="fe fe-trash-2 mr-1"></i>Delete</button>';
+                }
+               $val['action']       =   $action; $res[] = $val;  
+           } }
+           $returnData = array(
+			"draw"            => $draw,   
+			"recordsTotal"    => $totCount,  
+			"recordsFiltered" => $filtCount,
+			"data"            => $res   // total data array
+			);
+            return $returnData;
+        }
         if($viewType == 'ajax')     {   return view('admin.seller.list',$data); }else{ return view('admin.seller.page',$data); }
     }
     
@@ -53,13 +102,13 @@ class SellerController extends Controller{
         $data['title']              =   'New Seller Request List';
         $data['menuGroup']          =   'userGroup';
         $data['menu']               =   'seller';
-        $data['sellers']            =   SellerInfo::where('is_approved','!=',1)->where('is_deleted',0)->get();
+        $data['sellers']            =   SellerInfo::where('is_approved','!=',1)->where('is_deleted',0)->orderBy('id','desc')->get();
         return view('admin.new_seller.list',$data);
     }
     
     function seller(Request $request, $id=0,$type=''){
         if($type == 'view')         {   $title = 'View Seller'; }else if($type == 'new'){ $title = 'View Seller'; }else if($id > 0){ $title = 'Edit Seller'; }else{ $title = 'Add Seller'; }
-        $data['title']              =   'View Seller Detail'; 
+        $data['title']              =   'View Seller'; 
         $data['menuGroup']          =   'userGroup';
         $data['menu']               =   'seller';
         $stateId = $countryId       =   0;
@@ -108,7 +157,8 @@ class SellerController extends Controller{
             $error['error']     =   'store';
            foreach($validator->messages()->getMessages() as $k=>$row){ $error[$k] = $row[0]; }
         } 
-        $rules                  =   ['categories'  => 'required','commission' =>  'required|numeric|min:1'];   
+        if($error) { return $error; }
+        $rules                  =   ['categories'  => 'required','commission' =>  'required|numeric|min:1|max:99'];   
         $validator              =   Validator::make($storeSet,$rules);
         if ($validator->fails()){
             $error['error']     =   'storeSet';
@@ -124,7 +174,9 @@ class SellerController extends Controller{
         $storeSet               =   (object)$post->storeSet; 
         $images                 =   $request->file('image'); if(isset($post->filter)) { $filter = (object)$post->filter; }
         $selInfo                   =   ['fname'=>$info->director_name,'ic_number'=>$info->ic_number,'is_active'=>$storeSet->is_active];
+        
      //   $store['pack_charge']   =   $storeSet->pack_charge;
+     $store['licence'] =   $info->licence; $store['incharge_name'] =   $info->incharge_name; $store['incharge_phone'] =   $info->incharge_phone;
         $store['business_name'] =   $info->business_name;       $store['store_name']    =   $info->store_name;      $store['licence']    =   $info->licence;
         $store['commission']    =   $storeSet->commission;      $store['is_active']     =   $storeSet->is_active;
         $emailTypeId            =   Telecom::where('name','email')->first()->id; $phoneTypeId   =   Telecom::where('name','phone')->first()->id;
@@ -137,7 +189,7 @@ class SellerController extends Controller{
                                     SellerInfo::where('seller_id',$sellerId)->update($selInfo); Store::where('id',$storeId)->update($store);
             $msg                =   'Seller updated successfully!';
         }else{
-            $selInfo['is_approved']=   1;  $selInfo['approved_at'] = date('Y-m-d H:i:s');
+            $selInfo['is_approved']=   1;  $selInfo['approved_at'] = date('Y-m-d H:i:s'); $selInfo['ic_number'] = $info->ic_number;
             $sellerId           =   Seller::create(['username'=>$info->email,'password'=>Hash::make('123456')])->id; $selInfo['seller_id'] = $store['seller_id'] = $sellerId; 
             $storeId            =   Store::create($store)->id; SellerInfo::create($selInfo);
             $teleEmail          =   ['seller_id'=>$sellerId,'type_id'=>$emailTypeId,'value'=>$info->email]; 
@@ -198,6 +250,13 @@ class SellerController extends Controller{
             if($result){ return ['type'=>'success','id'=>$post->id]; }else{  return ['type'=>'warning','id'=>$post->id]; } 
         }
     }
+    function updateServiceStatus(Request $request){
+        $post               =   (object)$request->post(); 
+        $result             =   Store::where('seller_id',$post->id)->update([$post->field => $post->value]);
+        
+            if($result){ return ['type'=>'success','id'=>$post->id]; }else{  return ['type'=>'warning','id'=>$post->id]; } 
+        
+    }
     function saveSellerBank(Request $request){
         $post               =   (object)$request->post(); 
         $encrypted = Crypt::encryptString($post->acc_number);
@@ -224,5 +283,15 @@ class SellerController extends Controller{
         return      back()->with('success','Seller bank created successfully! ');
         }
        
+    }
+    
+    function searchStoreSellerIds($keywords,$field){
+        $query              =   Store::where($field, 'LIKE', '%'.$keywords.'%')->where('is_deleted',0); $sellerIds = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $sellerIds[]    =   $row->seller_id; }}return $sellerIds; 
+    }
+    
+    function searchTelecomSellerIds($keywords){
+        $query              =   SellerTelecom::where('value', 'LIKE', '%'.$keywords.'%'); $sellerIds = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $sellerIds[]    =   $row->seller_id; }}return $sellerIds; 
     }
 }

@@ -50,7 +50,7 @@
                             <span class="error"></span>
                         </div>
                         <div class="col-12 mb-2">
-                            {{Form::label('phone','Email',['class'=>'form-label'])}}
+                            {{Form::label('phone','Phone',['class'=>'form-label'])}}
                             {{Form::text('profile[phone]',$user->phone,['id'=>'phone','class'=>'form-control','placeholder'=>'Phone'])}}
                             <span class="error"></span>
                         </div>
@@ -59,7 +59,8 @@
                 <div class="card-footer text-right">
                     {{Form::hidden('can_submit',0,['id'=>'can_submit'])}}{{Form::hidden('profile[isd_code]',auth()->user()->isd_code,['id'=>'isd_code'])}}
                     {{Form::submit('Update',['id'=>'save_btn', 'class'=>'btn  btn-primary'])}}
-                    {{Form::button('Cancel',['id'=>'cancel','class'=>'btn  btn-danger'])}}
+                    
+                    <a href="{{url('/')}}"  class="btn  btn-danger" >Cancel</a> 
                 </div>
             {{Form::close()}}
         </div>

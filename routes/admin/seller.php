@@ -14,3 +14,4 @@ Route::post('/admin/seller/updateStatus', [App\Http\Controllers\Admin\SellerCont
 
 
 Route::post('/admin/seller/bank-data', [App\Http\Controllers\Admin\SellerController::class, 'saveSellerBank']);
+Route::post('/admin/seller/updateServiceStatus', [App\Http\Controllers\Admin\SellerController::class, 'updateServiceStatus']);

@@ -2,8 +2,8 @@
     <div class="card-header mb-4"><div class="card-title">Store Settings</div></div>
     <div class="col-lg-6 fl">
         <div class="form-group">
-            {{Form::label('categories','Store Categories',['class'=>''])}}
-            {{Form::select('storeSet[categories][]',$categories,$catIds,['id'=>'categories','class'=>'form-control chosen-select','placeholder'=>'Store Categories','multiple'=>true])}}
+            {{Form::label('categories','Store Categories',['class'=>''])}} <span class="text-red">*</span>
+            {{Form::select('storeSet[categories][]',$categories,$catIds,['id'=>'categories','class'=>'form-control chosen-select','multiple'=>true])}}
             <span class="error"></span>
         </div>
     </div>
@@ -33,7 +33,7 @@
     </div>
     <div class="col-lg-6 fl">
         <div class="form-group">
-            {{Form::label('commission','Commission',['class'=>''])}}
+            {{Form::label('commission','Commission',['class'=>''])}} <span class="text-red">*</span>
             {{Form::text('storeSet[commission]',$comi,['id'=>'commission','class'=>'form-control','placeholder'=>'Commission'])}}
             <span class="error"></span>
         </div>

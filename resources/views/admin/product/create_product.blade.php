@@ -40,18 +40,20 @@
           .remove:hover {
             background: white;
             color: black;
-          }</style>
+          }
+          #files.form-control{ line-height: 1.2; }
+          </style>
 @endsection
 @section('page-header')
 						<!--Page header-->
-
+@php $n_img = 0 @endphp
 
 						<div class="page-header">
 							<div class="page-leftheader">
 								<h4 class="page-title mb-0">Add Admin Product</h4>
 								<ol class="breadcrumb">
 									<li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Masters</a></li>
-									<li class="breadcrumb-item active" aria-current="page"><a href="#">Admin Product List</a></li>
+									<li class="breadcrumb-item active" aria-current="page"><a href="{{url('admin/product/list')}}">Admin Product List</a></li>
 									<li class="breadcrumb-item active" aria-current="page"><a href="#">Add Admin Product</a></li>
 								</ol>
 							</div>
@@ -108,18 +110,7 @@
                                                                 @enderror
                                                             </div>
                                                         </div>
-                                                        
-                                                        <div class="col-md-6">
-                                                            <div class="form-group">
-                                                                <label class="form-label">Short Description <span class="text-red">*</span></label>
-                                                                <textarea rows="1" class="form-control @error('short_description') is-invalid @enderror"  placeholder="Short Description about the product" name="short_description">{{ old('short_description') }}</textarea>
-                                                                @error('short_description')
-                                                                <span class="invalid-feedback" role="alert">
-                                                                    <strong>{{ $message }}</strong>
-                                                                </span>
-                                                            @enderror
-                                                            </div>
-                                                        </div>
+                                                       
                                                         <div class="col-md-6">
                                                             <div class="form-group">
                                                                 <label class="form-label">Category <span class="text-red">*</span></label>
@@ -174,14 +165,11 @@
                                                             </select>
                                                             </div>
                                                         </div>
-                                                        <div class="col-sm-6 col-md-6">
+                                                        <div class="col-sm-6 col-md-6 d-none">
                                                             <div class="form-group">
                                                                 <label class="form-label">Product Type <span class="text-red">*</span></label>
                                                                 <select class="form-control select2 @error('product_type') is-invalid @enderror" name="product_type">
-                                                                <option value="">Select</option>
-                                                                @foreach($prod_type as $type )
-                                                                    <option value="{{$type->id}}">{{$type->type_name}}</option>
-                                                                 @endforeach
+                                                                    <option value="1">Simple Product</option>
                                                                 </select>
                                                                 @error('product_type')
                                                                     <span class="invalid-feedback" role="alert">
@@ -197,6 +185,17 @@
                                                                     <option value="1">Active</option>
                                                                     <option value="0">Inactive</option>
                                                                 </select>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-12">
+                                                            <div class="form-group">
+                                                                <label class="form-label">Short Description <span class="text-red">*</span></label>
+                                                                <textarea rows="1" class="form-control @error('short_description') is-invalid @enderror"  placeholder="Short Description about the product" name="short_description">{{ old('short_description') }}</textarea>
+                                                                @error('short_description')
+                                                                <span class="invalid-feedback" role="alert">
+                                                                    <strong>{{ $message }}</strong>
+                                                                </span>
+                                                            @enderror
                                                             </div>
                                                         </div>
                                                         <div class="col-md-6">
@@ -236,11 +235,13 @@
             <div id="quillEditor" ></div>
             {{Form::hidden('specification','',['id'=>'specification','class'=>'form-control  '])}}
         </div>
-    </div>
+    </div> 
                                                         <div class="col-lg-12 col-md-12 col-sm-12">
                                                             <label class="form-label">Product Image <span class="text-red">*</span></label>
                                                             <div class="form-group mb-0">
-                                                                <input id="files" type="file" class="form-control" name="product_image[]" accept=".jpg, .png, image/jpeg, image/png"  multiple>
+                                                                {{Form::hidden('imgId[]',0,['id'=>'img_id_'.$n_img])}}
+                                                                {{Form::file('product_image[]',['id'=>'image_'.$n_img,'class'=>"form-control img",'placeholder'=>'Choose Image','accept'=>'image/*'])}}
+                                                                
                                                             </div>
                                                             {{-- <input type="file" class="dropify" data-height="180" name="product_image" /> --}}
                                                         </div>
@@ -268,6 +269,27 @@
 					</div>
 				</div><!-- end app-content-->
             </div>
+<div id="add_more_img" class="d-none">
+    <div id="img_row_id" class="col-12 fl img_row">
+        <div class="col-lg-6 fl">
+            <div class="form-group">
+                {{Form::file('image[]',['id'=>'image_file_id','class'=>'form-control img','placeholder'=>'Choose Image','accept'=>'image/*'])}}
+            </div>
+        </div>
+        <div class="col-lg-5 col-8 fl">
+            <div class="form-group">
+                <img src="" alt="Image" id="image_disp_id" class="no-disp" />
+            </div>
+        </div>
+        <div class="col-lg-1 col-2 pl-0 mb-2 fl">
+            <div class="form-group">
+                <label>&nbsp; &nbsp;</label><div class="clr"></div>
+                <a id="del_img_id" class="del_img del"><i class="fa fa-trash"></I></a>
+            </div>
+        </div>@php $n_img++; @endphp
+        <div class="clr"></div>
+    </div>
+</div>
 @endsection
 @section('js')
          <!--INTERNAL Select2 js -->
@@ -387,7 +409,6 @@ $(document).ready(function () {
     $('#adminpro').addClass("active");
   $('#adm_pro').addClass("active");
   $('#master').addClass("is-expanded");
-
     if (window.File && window.FileList && window.FileReader) {
     $("#files").on("change", function(e) {
         $(".pip").remove();

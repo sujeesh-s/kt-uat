@@ -71,7 +71,7 @@
 														<table id="category-table" class="category-table table table-striped table-bordered w-100 text-nowrap">
 															<thead>
 																<tr>
-																	<th class="align-top border-bottom-0 wd-5"></th>
+																	<th class="align-top border-bottom-0 wd-5">Select</th>
 																	<th class="border-bottom-0 w-30">Category</th>
 																	<th class="border-bottom-0 w-30">Description</th>
 																	<th class="border-bottom-0 w-15">Order</th>

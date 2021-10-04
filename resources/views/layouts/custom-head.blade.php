@@ -19,7 +19,7 @@
 		<link href="{{URL::asset('admin/assets/css/icons.css')}}" rel="stylesheet" />
 		
 		@yield('css')
-		
+			@include('includes.config-styles')
 		<!-- Color Skin css -->
 		<link id="theme" href="{{URL::asset('admin/assets/colors/color1.css')}}" rel="stylesheet" type="text/css"/>
                 

@@ -152,6 +152,7 @@ class CustomerController extends Controller
         $data['sale_amt']           =    SaleOrder::where('order_status','delivered')->where('cust_id',$user_id)->sum('total'); 
         $data['order_cancel']       =    SaleOrder::where('cust_id',$user_id)->where('order_status','cancelled')->count();
         $data['order_refund']       =    SaleOrder::where('cust_id',$user_id)->where('order_status','refund')->count();
+        // dd($data);
         return view('admin.customer.view_customer', $data);
     }
 
@@ -222,6 +223,7 @@ class CustomerController extends Controller
                         'updated_by'=>auth()->user()->id,
                         'updated_at'=>date("Y-m-d H:i:s")]); 
             }
+             Session::flash('message', ['text'=>'Customer updated successfully.','type'=>'success']);
                         
                         return redirect(url('admin/customer/view/'.$user_id));           
         }

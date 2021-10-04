@@ -1259,7 +1259,7 @@ class ProductController extends Controller
 
         $products=[];
         $query = Product::query();
-
+       
         
         
         if ($max_price!='' && $min_price!='') {
@@ -1325,7 +1325,7 @@ class ProductController extends Controller
         ->orderBy('prd_prices.price', 'DESC');
             } 
 
-          if($category!='' || $subcategory!='' || $brand!='' || $latest!='') 
+          if($category!='' || $subcategory!='' || $brand!='') 
           { 
 
             if($low_to_high!=1 && $high_to_low!=1 && $min_price=='' && $max_price==''){
@@ -1344,8 +1344,24 @@ class ProductController extends Controller
         });
             }
           }
+          if($low_to_high!=1 && $high_to_low!=1 && $min_price=='' && $max_price=='')
+            {
+        $query->where('is_active',1)->where('is_deleted',0)->where('is_approved',1)->where('is_featured',1);
+        $query->when($category, function ($q,$category) {
+            return $q->where('category_id', $category);
+        });
+        $query->when($subcategory, function ($q,$subcategory) {
+            return $q->where('sub_category_id', $subcategory);
+        });
+        $query->when($brand, function ($q,$brand) {
+            return $q->where('brand_id', $brand);
+        });
+        $query->when($latest == 1, function ($q,$latest) {
+            return $q->orderBy('created_at','DESC');
+        });
+            }
         }
-
+        
         $prod_data = $query->paginate(12);   
 
             
@@ -1355,6 +1371,7 @@ class ProductController extends Controller
             {
                 foreach($prod_data as $row)
                 {
+                    if($row->is_featured==1){
                     $store_active = Store::where('is_active',1)->where('seller_id',$row->seller_id)->first();
                     if($store_active)
                     {
@@ -1397,6 +1414,7 @@ class ProductController extends Controller
             $products[]=$prd_list;
             
                 }//Active store
+                    }
                 }
            
            if(!empty($products))
@@ -1516,6 +1534,22 @@ class ProductController extends Controller
         });
             }
           }
+          if($low_to_high!=1 && $high_to_low!=1 && $min_price=='' && $max_price=='')
+            {
+        $query->where('is_active',1)->where('is_deleted',0)->where('is_approved',1)->where('daily_deals',1);
+        $query->when($category, function ($q,$category) {
+            return $q->where('category_id', $category);
+        });
+        $query->when($subcategory, function ($q,$subcategory) {
+            return $q->where('sub_category_id', $subcategory);
+        });
+        $query->when($brand, function ($q,$brand) {
+            return $q->where('brand_id', $brand);
+        });
+        $query->when($latest == 1, function ($q,$latest) {
+            return $q->orderBy('created_at','DESC');
+        });
+            }
         }
 
         $prod_data = $query->paginate(12);   

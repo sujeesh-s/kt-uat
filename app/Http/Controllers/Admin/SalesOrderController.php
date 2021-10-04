@@ -131,6 +131,17 @@ class SalesOrderController extends Controller
             $orders                 =   SalesOrderCancel::where('is_deleted',0);
         }else if($post->model             ==  'refund'){
             $update                 =   SalesOrder::where('id',$post->id)->update([$post->field => $post->value]);
+            $saleval = SalesOrder::where('id',$post->id)->first();
+            $from   = 1; 
+            $utype  = 1;
+            $to     = $saleval->cust_id;
+            $ntype  = 'refund_accepted';
+            $title  = 'Refund Accepted';
+            $desc   = 'The amount refunded for #'.$saleval->order_id.' order';
+            $refId  = $post->id;
+            $reflink = 'customer/order/detail';
+            $notify  = 'customer';
+            addNotification($from,$utype,$to,$ntype,$title,$desc,$refId,$reflink,$notify);
             $orders                 =   SalesOrder::where('org_id',1); $salesId = $post->id;
         }else{ 
             $update                 =   SalesOrder::where('id',$post->id)->update([$post->field => $post->value]);

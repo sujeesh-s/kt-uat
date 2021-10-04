@@ -24,10 +24,11 @@
     <div id="data_type_div" class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('phone','Phone',['class'=>''])}} <span class="text-red">*</span>
-            {{Form::text('info[phone]',$phone,['id'=>'phone', 'class'=>'form-control','placeholder'=>'Phone'])}}
+            {{Form::number('info[phone]',$phone,['id'=>'phone', 'class'=>'form-control','placeholder'=>'Phone'])}}
             <span class="error"></span>
         </div>
     </div>
+    <div class="clearfix"></div>
     <div id="config_div" class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('licence','Licence',['class'=>''])}}
@@ -45,7 +46,7 @@
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('ic_number','Director IC Number',['class'=>''])}}
-            {{Form::text('info[ic_number]',$name,['id'=>'ic_number','class'=>'form-control','placeholder'=>'Director IC Number'])}}
+            {{Form::number('info[ic_number]',$icNo,['id'=>'ic_number','class'=>'form-control','placeholder'=>'Director IC Number'])}}
             <span class="error"></span>
         </div>
     </div> 
@@ -59,7 +60,7 @@
     <div class="col-lg-6 fl">
         <div class="form-group">
             {{Form::label('incharge_phone','Incharge Phone',['class'=>''])}}
-            {{Form::text('info[incharge_phone]',$icPhone,['id'=>'incharge_phone','class'=>'form-control','placeholder'=>'Incharge Phone'])}}
+            {{Form::number('info[incharge_phone]',$icPhone,['id'=>'incharge_phone','class'=>'form-control','placeholder'=>'Incharge Phone'])}}
             <span class="error"></span>
         </div>
     </div> 
@@ -68,13 +69,13 @@
             <div class="col-md-6">
                 <div class="form-group">
                     {{Form::label('logo','Logo',['class'=>''])}}
-                    {{Form::file('image[logo]',['id'=>'logo','class'=>'form-control'])}}
+                    {{Form::file('image[logo]',['id'=>'logo','class'=>'form-control imgup','accept'=>'image/*'])}}
                     <span class="error"></span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <img id="logoImg" src="{{$logoImg}}" alt="Logo" height="70" />
+                 @if($id>0)   <img id="logoImg" src="{{$logoImg}}" alt="Logo" height="70" /> @endif
                 </div>
             </div>
         </div>
@@ -84,13 +85,13 @@
             <div class="col-md-6">
                 <div class="form-group">
                     {{Form::label('banner','Store Banner',['class'=>''])}}
-                    {{Form::file('image[banner]',['id'=>'banner','class'=>'form-control'])}}
+                    {{Form::file('image[banner]',['id'=>'banner','class'=>'form-control imgup','accept'=>'image/*'])}}
                     <span class="error"></span>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="form-group">
-                    <img id="bannerImg" src="{{$bannerImg}}" alt="Banner" height="120" />
+                  @if($id>0)   <img id="bannerImg" src="{{$bannerImg}}" alt="Banner" height="120" />  @endif
                 </div>
             </div>
         </div>

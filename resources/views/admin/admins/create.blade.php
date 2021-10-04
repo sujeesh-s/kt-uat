@@ -6,6 +6,11 @@
 		<link href="{{URL::asset('admin/assets/plugins/datatable/responsive.bootstrap4.min.css')}}" rel="stylesheet" />
 		<link href="{{URL::asset('admin/assets/plugins/sweet-alert/jquery.sweet-modal.min.css')}}" rel="stylesheet" />
 		<link href="{{URL::asset('admin/assets/plugins/sweet-alert/sweetalert.css')}}" rel="stylesheet" />
+		<style>
+		#avatar {
+		    padding:3px;
+		}
+		</style>
 @endsection
 @section('page-header')
 						<!--Page header-->
@@ -35,16 +40,7 @@
 						<div class="row flex-lg-nowrap">
 							<div class="col-12">
 
-								@if(Session::has('message'))
-
-								<div class="alert alert-{{session('message')['type']}}" role="alert"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>{{session('message')['text']}}</div>
-								@endif
-								@if ($errors->any())
-								@foreach ($errors->all() as $error)
-
-								<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>{{$error}}</div>
-								@endforeach
-								@endif
+							
 								<div class="row flex-lg-nowrap">
 									<div class="col-12 mb-3">
 										<div class="e-panel card">
@@ -58,29 +54,29 @@
         
         <div >
             {{Form::hidden('id',0,['id'=>'id'])}}
-             
+          
             <div class="form-row">
                 <div class="col-md-6 mb-3">
                     <label for="fname">First name <span class="text-red">*</span></label>
-                    <input type="text" class="form-control" name="user[fname]" id="fname" placeholder="First name" value="" required>
+                    <input type="text" class="form-control" name="user[fname]" id="fname" placeholder="First name" value="@if(old()){{old('user')['fname']}}@endif" required>
                     <span class="error"></span>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label for="lname">Last name</label>
-                    <input type="text" class="form-control" name="user[lname]" id="lname" placeholder="Last name" value="" required>
+                    <label for="lname">Last name <span class="text-red">*</span></label>
+                    <input type="text" class="form-control" name="user[lname]" id="lname" placeholder="Last name" value="@if(old()){{old('user')['lname']}}@endif" required>
                     <span class="error"></span>
                 </div>
             </div>
             <div class="form-row">
                 <div class="col-md-6 mb-3">
                     <label for="email">Email <span class="text-red">*</span></label>
-                    <input type="email" class="form-control" name="user[email]" id="email" placeholder="Email" value="" required>
+                    <input type="email" class="form-control" name="user[email]" id="email" placeholder="Email" value="@if(old()){{old('user')['email']}}@endif" required>
                     <span class="error"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="phone">Phone <span class="text-red">*</span></label>
                     
-                    <input type="text" class="form-control" name="user[phone]" id="phone" placeholder="Phone" value="" required>
+                    <input type="text" class="form-control" name="user[phone]" id="phone" placeholder="Phone" value="@if(old()){{old('user')['phone']}}@endif" required>
                     <span class="error"></span>
                 </div>
             </div>
@@ -89,12 +85,12 @@
             <div class="form-row">
                 <div class="col-md-6 mb-3">
                     <label for="password">Password <span class="text-red">*</span></label>
-                    <input type="password" class="form-control" name="user[password]" id="password" placeholder="Password" value="" >
+                    <input type="password" class="form-control" name="user[password]" id="password" placeholder="Password"  value="@if(old()){{old('user')['password']}}@endif" >
                     <span class="error"></span>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="avatar">Avatar</label>
-                    {{Form::file('avatar',['id'=>'avatar','class'=>'form-control'])}}
+                    {{Form::file('avatar',['id'=>'avatar','class'=>'form-control', 'accept'=>"image/*"])}}
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="avatar">Status <span class="text-red">*</span></label>
@@ -109,11 +105,11 @@
 <div class="form-row">
 <div class="col-md-6 mb-3">
 <label for="email">Role <span class="text-red">*</span></label>
-<select class="form-control custom-select select2" name="user[role_id]" id="role_id" required >
+<select class="form-control custom-select select2" name="user[role_id]" id="role_id" required  >
 <option value="">Select Role</option>
 @if($roles && count($roles) > 0)
 @foreach ($roles as $role)
-<option value="{{ $role->id }}">{{ $role->usr_role_name }}</option>
+<option value="{{ $role->id }}" <?php if(old()){ if(old('user')['role_id']== $role->id){ echo 'selected'; } } ?>>{{ $role->usr_role_name }}</option>
 @endforeach
 @endif
 </select>
@@ -173,7 +169,7 @@
 		<script src="{{URL::asset('admin/assets/js/datatables.js')}}"></script>
 	<!-- INTERNAL Popover js -->
 		<script src="{{URL::asset('admin/assets/js/popover.js')}}"></script>
-
+<script src="{{URL::asset('admin/assets/js/jquery.validate.min.js')}}"></script>
 		<!-- INTERNAL Sweet alert js -->
 		<script src="{{URL::asset('admin/assets/plugins/sweet-alert/jquery.sweet-modal.min.js')}}"></script>
 		<script src="{{URL::asset('admin/assets/plugins/sweet-alert/sweetalert.min.js')}}"></script>
@@ -181,10 +177,105 @@
 <script type="text/javascript">
 	jQuery(document).ready(function(){
 
+jQuery.validator.addMethod("phone", function (phone_number, element) {
+        phone_number = phone_number.replace(/\s+/g, "");
+        return this.optional(element) || phone_number.length > 9 &&
+              phone_number.match(/\(?([0-9]{3})\)?([ .-]?)([0-9]{3})\2([0-9]{4})/);
+    }, "Invalid phone number");
 
+
+$("#save_btn").click(function(){
+
+$("#adminForm").validate({
+	ignore: [],
+rules: {
+
+"user[fname]" : {
+required: true
+},
+
+"user[email]": {
+required: true,
+email: true
+},
+"user[phone]": {
+
+required: true,
+phone:true,
+number: true,
+},
+"user[password]" : {
+required: true,
+maxlength: 15,
+minlength: 6
+
+},
+"user[role_id]" : {
+required: true
+},
+
+
+},
+
+messages : {
+"user[fname]": {
+required: "First name is required."
+},
+"user[email]": {
+required: "Email is required."
+},
+"user[phone]": {
+required: "Phone number is required."
+},
+"user[password]": {
+required: "Password is required."
+},
+"user[role_id]": {
+required: "Role is required."
+}
+
+},
+
+
+ errorPlacement: function(error, element) {
+ 	 // $("#errNm1").empty();$("#errNm2").empty();
+ 	 console.log($(error).text());
+            if (element.attr("name") == "subcat_id" ) {
+            	console.log("innnnnn");
+                $("#errNm1").text($(error).text());
+                
+            }else if (element.attr("name") == "product_id" ) {
+                $("#errNm2").text($(error).text());
+                
+            }else {
+               error.insertAfter(element)
+            }
+        },
+
+});
+});
 
 
 	});
 </script>
 
+<script type="text/javascript">
+    $(document).ready(function(){
+            @if(Session::has('message'))
+            @if(session('message')['type'] =="success")
+            
+            toastr.success("{{session('message')['text']}}"); 
+            @else
+            toastr.error("{{session('message')['text']}}"); 
+            @endif
+            @endif
+            
+            @if ($errors->any())
+            @foreach ($errors->all() as $error)
+            toastr.error("{{$error}}"); 
+            
+            @endforeach
+            @endif
+    });
+    </script>
 @endsection

@@ -47,7 +47,9 @@
           .remove:hover {
             background: rgb(248, 6, 6);
             color: rgb(245, 239, 239);
-          }</style>
+          } 
+          #files.form-control{ line-height: 1.2; }
+          </style>
 @endsection
 @section('page-header')
 						<!--Page header-->
@@ -58,7 +60,7 @@
 								<h4 class="page-title mb-0">Edit Admin Product</h4>
 								<ol class="breadcrumb">
 									<li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Masters</a></li>
-									<li class="breadcrumb-item active" aria-current="page"><a href="#">Admin Product List</a></li>
+									<li class="breadcrumb-item active" aria-current="page"><a href="{{url('admin/product/list')}}">Admin Product List</a></li>
 									<li class="breadcrumb-item active" aria-current="page"><a href="#">Edit Admin Product</a></li>
 								</ol>
 							</div>
@@ -260,7 +262,12 @@
                                                         <div class="col-lg-12 col-md-12 col-sm-12">
                                                             <label class="form-label">Change Product Image <span class="text-red">*</span></label>
                                                             <div class="form-group mb-2">
-                                                                <input id="files" type="file" class="form-control" name="product_image[]" accept=".jpg, .png, image/jpeg, image/png"  multiple>
+                                                                <input id="files" type="file" class="form-control @error('product_image') is-invalid @enderror" name="product_image[]" accept=".jpg, .png, image/jpeg, image/png"  multiple>
+                                                                 @error('product_image')
+                                                                    <span class="invalid-feedback" role="alert">
+                                                                        <strong>{{ $message }}</strong>
+                                                                    </span>
+                                                                @enderror
                                                             </div>
                                                         </div>
                                                         <br>
@@ -268,7 +275,8 @@
                                                         @if($image_product)
                                                         <div class="col-lg-12 col-md-12 col-sm-12">
                                                         <div class="form-group">
-                                                        <label class="form-label">Selected Product Image</label></div></div>
+                                                        <label class="form-label">Selected Product Image</label></div></div> 
+                                                        <input type="hidden" id="up_imgs" name="up_imgs" value="{{count($image_product)}}" />
                                                         @foreach($image_product as $imgprd)
                                                             <div class="d-flex">
                                                                 <span class="pip">
@@ -437,6 +445,8 @@ $(document).ready(function () {
   $('#adminpro').addClass("active");
   $('#adm_pro').addClass("active");
   $('#master').addClass("is-expanded");
+  
+  $('#files').on('change',function(){ var upImgs =   parseInt($('#up_imgs').val()); if(this.value != ''){ $('#up_imgs').val((upImgs+1)); } })
 
     if (window.File && window.FileList && window.FileReader) {
     $("#files").on("change", function(e) {
@@ -475,13 +485,15 @@ $(document).ready(function () {
     $(".remove").click(function(){
     var img_id = $(this).data('id');
     $(this).parent(".pip").remove();
+    var upImgs      =   parseInt($('#up_imgs').val());
      toastr.success("Image removed successfully."); 
         $.ajax({
             type: "POST",
             url: '{{url("/admin/product/remove-image")}}',
             data: { "_token": "{{csrf_token()}}", img_id: img_id},
             success: function (data) {
-                
+                upImgs = (upImgs-1);
+                $('#up_imgs').val(upImgs);
                 console.log(data.success)
 
             }

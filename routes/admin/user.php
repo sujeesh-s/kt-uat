@@ -2,8 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [App\Http\Controllers\Admin\AdminController::class, 'index']);
-
 Route::get('/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'index']);
 Route::get('/admin/dashboard', [App\Http\Controllers\Admin\AdminController::class, 'index']);
 
@@ -130,6 +128,7 @@ Route::get('/admin/subcategory/edit/{id}', [App\Http\Controllers\Admin\CategoryC
 Route::get('/admin/subcategory/view/{id}', [App\Http\Controllers\Admin\CategoryController::class, 'view_subcategory']);
 
 Route::get('/admin/product/list', [App\Http\Controllers\Admin\ProductController::class, 'index'])->name('admin.productlist');
+Route::post('/admin/product/list', [App\Http\Controllers\Admin\ProductController::class, 'index']);
 Route::get('/admin/product/', [App\Http\Controllers\Admin\ProductController::class, 'product'])->name('admin.product');
 Route::post('/admin/subcategory-ajax/', [App\Http\Controllers\Admin\ProductController::class, 'subCat'])->name('subcategory_ajax');
 Route::post('/admin/taglist-ajax/', [App\Http\Controllers\Admin\ProductController::class, 'taglist'])->name('taglist_ajax');
@@ -161,6 +160,9 @@ Route::get('/admin/report/product-review-report/{id}/{type}', [App\Http\Controll
 Route::get('/admin/report/best-purchase-report/', [App\Http\Controllers\Admin\ReportController::class, 'best_purchase_report']);
 Route::post('/admin/report/best-purchase-report/', [App\Http\Controllers\Admin\ReportController::class, 'best_purchase_report']);
 
+//chat Admin side
+Route::get('/admin/chat/list', [App\Http\Controllers\Admin\ChatsController::class, 'list']);
+Route::get('/admin/chat/chat-message/{id}/{type}', [App\Http\Controllers\Admin\ChatsController::class, 'chat']);
 
 
 Route::get('/admin/shocking-sales', [App\Http\Controllers\Admin\ShockingSaleController::class, 'shocking_sales'])->name('admin.shocking_sales');

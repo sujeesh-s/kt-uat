@@ -15,4 +15,5 @@ class SaleOrder extends Model
         $this->hasMany(SaleorderItems::class, 'sales_id');
     }
     public function orderitem($sale_id){ return SaleorderItems::where('sales_id',$sale_id)->get(); }
+    public function seller(){ return $this->belongsTo(Seller ::class, 'seller_id'); }
 }

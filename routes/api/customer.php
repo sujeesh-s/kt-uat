@@ -107,3 +107,4 @@ Route::post('/customer/recent/views', [App\Http\Controllers\Api\Customer\Account
 Route::post('/customer/wallet/amount', [App\Http\Controllers\Api\Customer\AccountController::class, 'wallet_amount']);
 Route::post('/customer/view/notifications', [App\Http\Controllers\Api\Customer\AccountController::class, 'notifications']);
 Route::post('/customer/order/invoice', [App\Http\Controllers\Api\Customer\AccountController::class, 'invoice']);
+Route::post('/customer/order/return/shipment', [App\Http\Controllers\Api\Customer\AccountController::class, 'return_shipment']);

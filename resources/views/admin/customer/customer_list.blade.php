@@ -57,6 +57,7 @@
 															<thead>
 																<tr>
 																	<th class="align-top border-bottom-0 wd-5"></th>
+																	<th class="border-bottom-0 w-30">Customer ID</th>
 																	<th class="border-bottom-0 w-30">Customer Name</th>
 																	<th class="border-bottom-0 w-30">Contact number</th>
                                                                     <th class="border-bottom-0 w-30">Email</th>
@@ -71,13 +72,18 @@
                     											@foreach($customer as $row)
                                                                <?php   
                                                                         $user_id=$row->id;
-                                                                       
+                                                                       $cust_id = date('y',strtotime($row->created_at)).date('m',strtotime($row->created_at)).str_pad($user_id, 6, "0", STR_PAD_LEFT);
                                                                        $name=DB::table('usr_info')->where('user_id', $user_id)->first();
                                                                        //$ph=$row->telecom_ph($row->id)->usr_telecom_value;?>
 																<tr>
 																	<td class="align-middle select-checkbox" id="" data-value="{{$row->id}}">
 																		<label class="custom-control custom-checkbox">
 																		</label>
+																	</td>
+																	<td class="align-middle">
+																		<div class="d-flex">
+																		<h6 class=" font-weight-bold">{{$cust_id}}</h6>
+                                                                        </div>
 																	</td>
 																	<td class="align-middle">
 																		<div class="d-flex">
@@ -207,7 +213,7 @@
 
                                     <div class="row">
                                         <div class="col-xs-12 col-md-12 text-center">
-                                          <button type="button" id="submitForm" class="btn btn-primary btn-prime white btn-flat">Register</button>
+                                          <button type="submit" id="submitForm" class="btn btn-primary btn-prime white btn-flat">Register</button>
                                         </div>
                                     </div>
 
@@ -224,22 +230,12 @@
 @section('js')
 		<!-- INTERNAl Data tables -->
 		<script src="{{URL::asset('admin/assets/js/datatable/tables/customer-table.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/dataTables.bootstrap4.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/dataTables.buttons.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/buttons.bootstrap4.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/jszip.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/pdfmake.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/vfs_fonts.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/buttons.html5.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/buttons.print.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/js/buttons.colVis.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/dataTables.responsive.min.js')}}"></script>
-		<script src="{{URL::asset('admin/assets/plugins/datatable/responsive.bootstrap4.min.js')}}"></script>
+
 
         <!--INTERNAL Select2 js -->
 		<script src="{{URL::asset('admin/assets/plugins/select2/select2.full.min.js')}}"></script>
 		<script src="{{URL::asset('admin/assets/js/select2.js')}}"></script>
-
+<script src="{{URL::asset('admin/assets/js/jquery.validate.min.js')}}"></script>
 	<!-- INTERNAL Popover js -->
 		<script src="{{URL::asset('admin/assets/js/popover.js')}}"></script>
 
@@ -248,8 +244,77 @@
 		<script src="{{URL::asset('admin/assets/plugins/sweet-alert/sweetalert.min.js')}}"></script>
 		<script src="{{URL::asset('admin/assets/js/sweet-alert.js')}}"></script>
         <script type="text/javascript">
-            $('body').on('click', '#submitForm', function(){
-                $url='{{ route("customeregister") }}';
+           
+        </script>
+<script type="text/javascript">
+
+	$(document).ready(function(){
+jQuery.validator.addMethod("lettersonly", function(value, element) {
+  return this.optional(element) || /^[a-z ]+$/i.test(value);
+}, "Please enter valid name."); 
+
+ $('body').on('click', '#submitForm', function(e){
+     
+
+$("#Register").validate({
+    
+rules: {
+
+first_name : {
+required: true,
+lettersonly: true 
+},
+
+last_name: {
+required: true,
+lettersonly: true
+},
+number: {
+required: true,
+number: true,
+minlength:7,
+maxlength:15
+},
+email : {
+required: true,
+email: true,
+},
+
+
+password: {
+required: true,
+minlength:8,
+maxlength:20
+},
+
+},
+
+messages : {
+first_name: {
+required: "First Name is required."
+},
+last_name: {
+required: "Last Name is required."
+},
+number: {
+required: "Contact Number is required.",
+minlength: "Contact Number is invalid",
+maxlength: "Contact Number is invalid"
+},
+email: {
+required: "Email is required."
+},
+password: {
+required: "Password is required.",
+minlength: "Password must be greater than 8 digits.",
+maxlength: "Password must be less than 20 digits."
+},
+
+
+},
+
+submitHandler: function (form) {
+       $url='{{ route("customeregister") }}';
                 var registerForm = $("#Register");
                 var formData = registerForm.serialize();
                // var files = $('#profile_img')[0].files[0];
@@ -284,10 +349,18 @@
                         }
                     },
                 });
-            });
-        </script>
-<script type="text/javascript">
+             return false; 
+    }
 
+});
+});
+
+});
+
+ $('body').on('click', '#submitForm', function(){
+                
+            });
+            
 	function delete_cat(cat_id){
        // alert(cat_id);
        $('#del_modal').show();

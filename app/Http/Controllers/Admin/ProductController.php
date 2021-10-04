@@ -25,17 +25,73 @@ use Intervention\Image\Facades\Image;
 use App\Rules\Name;
 use Validator;
 
-class ProductController extends Controller
-{
-    public function __construct()
-    {
-        $this->middleware('auth:admin');
-    }
-    public function index()
-    {
-        $data['title']              =   'Admin Product';
-        $data['menu']               =   'Admin Product';
-        $data['product']            =    AdminProduct::where('is_deleted',NULL)->orWhere('is_deleted',0)->orderBy('id','DESC')->get();
+class ProductController extends Controller{
+    
+    public function __construct() { $this->middleware('auth:admin'); }
+    
+    public function index(Request $request){
+        $post                       =   (object)$request->post(); $res = []; 
+        $data['title']              =   'Admin Product List';
+        $data['menuGroup']          =   'product';
+        $data['menu']               =   'admin_product';
+        $data['active']             =   '';
+        $data['categories']         =   getDropdownData(Category::where('is_active',1)->where('is_deleted',0)->get(),'category_id','cat_name');
+        $data['subCats']            =   getDropdownData(Subcategory::where('is_active',1)->where('is_deleted',0)->get(),'subcategory_id','subcategory_name');
+        $products                   =   AdminProduct::where('is_deleted',NULL)->orWhere('is_deleted',0);
+        if(isset($request->active)     &&  $request->active != ''){ 
+            $products               =   $products->where('is_active',$request->active); 
+            $data['active']         =   $request->active;
+        }if(isset($request->category)     &&  $request->category != ''){ 
+            $products               =   $products->where('category_id',$request->category); 
+            $data['category']       =   $request->category;
+        }if(isset($request->sub_cat)     &&  $request->sub_cat != ''){ 
+            $products               =   $products->where('sub_category_id',$request->sub_cat); 
+            $data['subCats']        =   $request->sub_cat;
+        }
+        if(isset($post->vType)       ==  'ajax'){
+           $search                  =   (isset($post->search['value']))? $post->search['value'] : ''; 
+           $start                   =   (isset($post->start))? $post->start : 0; 
+           $length                  =   (isset($post->length))? $post->length : 10; 
+           $draw                    =   (isset($post->draw))? $post->draw : ''; 
+           $totCount                =   $products->count(); $filtCount  =   $products->count();
+           if($search != ''){
+                $products           =   $products->where(function($qry) use ($search){
+                                            $qry->where('name', 'LIKE', '%'.$search.'%');
+                                            $qry->orWhereIn('category_id', $this->getCatPrdIds($search));
+                                            $qry->orWhereIn('sub_category_id', $this->getSubCatPrdIds($search));
+                                        });
+                $filtCount          =   $products->count();
+           }
+           if($length>0){$products  =   $products->offset($start)->limit($length); }
+           $products                =   $products->orderBy('id','desc')->get();
+           if($products){ foreach   (   $products as $row){ $action = '';
+               if($row->is_active   ==  1){ $checked    = 'checked="checked"'; $act = 'Active'; }else{ $checked = '';  $act = 'Inactive'; }
+               $val['id']           =   '';                                
+               $val['name']         =   '<a id="dtlBtn-'.$row->id.'" class="font-weight-bold viewDtl">'.$row->name.'</a>';
+               $val['cat']          =   $row->category->cat_name;      
+               $val['sub_cat']      =   $row->subCategory->subcategory_name;
+               $val['created_at']   =   date('d M Y, g:i a',strtotime($row->created_at)); 
+               $val['status']       =   '<div class="switch" data-search="'.$act.'">
+                                            <input class="switch-input status-btn" id="status-'.$row->id.'" type="checkbox" '.$checked.' name="status">
+                                            <label class="switch-paddle" for="status-'.$row->id.'">
+                                                <span class="switch-active" aria-hidden="true">Active</span><span class="switch-inactive" aria-hidden="true">Inactive</span>
+                                            </label>
+                                        </div>';
+                if(checkPermission('admin/product/list','edit') == true){
+                    $action         .=   '<a href="'.url('admin/product/edit').'/'.$row->id.'"   class="mr-2 btn btn-info btn-sm"><i class="fe fe-edit mr-1"></i> Edit</a>';
+                }if(checkPermission('admin/product/list','delete') == true){
+                    $action         .=   '<button  class="btn btn-sm btn-secondary deleteproduct" type="button" onclick="delete_cat('.$row->id.'}" ><i class="fe fe-trash-2 mr-1"></i>Delete</button>';
+                }
+               $val['action']       =   $action; $res[] = $val;  
+           } }
+           $returnData = array(
+			"draw"            => $draw,   
+			"recordsTotal"    => $totCount,  
+			"recordsFiltered" => $filtCount,
+			"data"            => $res   // total data array
+			);
+            return $returnData;
+        }
         return view('admin.product.product_list',$data);
     }
     public function product()
@@ -97,7 +153,7 @@ class ProductController extends Controller
             'language'=> ['required'],
             'short_description'=> ['required'],
             'product_type'=> ['required'],
-            'language'=> ['required']
+            'product_image'=> ['required']
         ]);
         if (AdminProduct::where('name', '=', $validate['product_name'])->where('is_deleted', '=',0)->exists()) {
             Session::flash('message', ['text'=>'Product Already Exist','type'=>'warning']);
@@ -186,7 +242,7 @@ class ProductController extends Controller
             'updated_at'=>date("Y-m-d H:i:s")
 
         ])->id;
-      //  $prd_id = 27;
+       //  $prd_id = 27;
       //  $prd_id = AdminProduct::latest('id')->first();
         if ($request->hasFile('product_image')) {
             // foreach ($request->file('product_image') as $file) {
@@ -219,7 +275,7 @@ class ProductController extends Controller
                 }
             }
         } 
-            Session::flash('message', ['text'=>'Created successfully','type'=>'success']);
+            Session::flash('message', ['text'=>'Product created successfully','type'=>'success']);
             return redirect(route('admin.productlist'));
         }
     }
@@ -262,7 +318,8 @@ class ProductController extends Controller
     }
 
     public function update_product(Request $request,$prd_id)
-    {
+    { 
+        $post       =   (object)$request->post();
         $validate= $request->validate([
             'product_name'=>['required','string'],
             'category' => ['required'],
@@ -270,8 +327,21 @@ class ProductController extends Controller
             'language'=> ['required'],
             'short_description'=> ['required'],
             'product_type'=> ['required'],
-            'language'=> ['required']
+            'language'=> ['required'],
         ]);
+        if($post->up_imgs == 0){ 
+            $validate= $request->validate([
+            'product_name'=>['required','string'],
+            'category' => ['required'],
+            'subcategory_id' => ['required'],
+            'language'=> ['required'],
+            'short_description'=> ['required'],
+            'product_type'=> ['required'],
+            'language'=> ['required'],
+            'product_image' => ['required','string']
+        ]);
+            
+        }
         
             $latest = DB::table('cms_content')->orderBy('cnt_id', 'DESC')->first();
             $latest_name_cid=++$latest->cnt_id;
@@ -353,10 +423,10 @@ class ProductController extends Controller
             foreach($request->file('product_image') as $k=>$image){ 
                 $imgName            =   time().'.'.$image->extension();
                 $path               =   '/app/public/admin_products/'.$prd_id;
-                $destinationPath    =   storage_path($path.'/thumb');
+                $destinationPath    =   storage_path($path.'/thumb'); // print_r($image); die;
                 $img                =   Image::make($image->path()); // echo storage_path().'  '. $destinationPath; die;
                 if(!file_exists($destinationPath)) { mkdir($destinationPath, 755, true);}
-                $img->resize(250, 250, function($constraint){ $constraint->aspectRatio(); })->save($destinationPath.'/'.$imgName);
+                $img->resize(250, 250, function($constraint){ $constraint->aspectRatio(); })->save($destinationPath.'/'.$imgName); 
                 $destinationPath    =   storage_path($path);
                 $image->move($destinationPath, $imgName);
                 $imgUpload          =   uploadFile('/'.$path,$imgName);
@@ -366,7 +436,7 @@ class ProductController extends Controller
                 }
             }
             }
-            Session::flash('message', ['text'=>'Updated successfully','type'=>'success']);
+            Session::flash('message', ['text'=>'Product updated successfully','type'=>'success']);
             return redirect(route('admin.productlist'));
         
     }
@@ -376,5 +446,14 @@ class ProductController extends Controller
         $prd_img_id=$request->img_id;
         $del_img=PrdAdminImage::where('id',$prd_img_id)->delete();
         response()->json(['success'=>'Removed successfully.']);
+    }
+    
+    function getCatPrdIds($keyword){
+        $query              =   Category::where('cat_name', 'LIKE', '%'.$keyword.'%')->where('is_deleted',0); $ids = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $ids[]    =   $row->category_id; }}return $ids; 
+    }
+    function getSubCatPrdIds($keyword){
+        $query              =   Subcategory::where('subcategory_name', 'LIKE', '%'.$keyword.'%')->where('is_deleted',0); $ids = [0];
+        if($query->count()  >   0)  {   foreach($query->get() as $row){ $ids[]    =   $row->subcategory_id; }}return $ids; 
     }
 }

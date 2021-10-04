@@ -60,7 +60,7 @@
 														<table id="subcategory" class="subcategory-table table table-striped table-bordered w-100 text-nowrap">
 															<thead>
 																<tr>
-																	<th class="align-top border-bottom-0 wd-5"></th>
+																	<th class="align-top border-bottom-0 wd-5">Select</th>
 																	<th class="border-bottom-0 w-20">Sub-Category</th>
                                                                     <th class="border-bottom-0 w-20">Category</th>
                                                                     <th class="border-bottom-0 w-20">Parent</th>
@@ -101,7 +101,7 @@
 																			<span class="avatar brround avatar-md d-block" style="background-image: url({{URL::asset('admin/assets/images/users/2.jpg')}})"></span>
 																			@endif
 																			<div class="ml-3 mt-1">
-																				<h6 class="mb-0 font-weight-bold">{{$subcategory_name->content}}</h6>
+																				<h6 style="overflow: hidden;white-space: nowrap;text-overflow: ellipsis; max-width: 200px;" class="mb-0 font-weight-bold">{{$subcategory_name->content}}</h6>
 																			</div>
 																		</div>
 																		<!--<div class="d-flex">-->

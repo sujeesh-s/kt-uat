@@ -57,7 +57,8 @@ class CategoryController extends Controller
         ]);
         if (Category::where('cat_name', '=', $validate['category_name'])->where('is_deleted', '=',0)->exists()) {
             Session::flash('message', ['text'=>'Category Already Exist','type'=>'warning']);
-            return redirect(route('admin.category'));
+            // return redirect(route('admin.category'));
+             return back()->withInput($request->all());
         }
         else
         {

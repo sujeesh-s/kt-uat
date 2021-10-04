@@ -108,7 +108,7 @@
 																	<div class="col mb-3">
 																		<div class="form-group">
 																			<label class="form-label">Category <span class="text-red">*</span></label>
-	<select class="form-control custom-select select2" name="cat_id" id="category_id" required onchange="loadsubcat()">
+	<select class="form-control custom-select select2" name="cat_id" id="category_id"  onchange="loadsubcat()">
 		<option value="">Select Category</option>
 	@foreach ($categories as $cat)
 	<option value="{{ $cat->category_id }}">{{ $cat->cat_name }}</option>

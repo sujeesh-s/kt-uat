@@ -80,6 +80,15 @@
                         <div class="mb-3 tar">
                             <div class="card-title"><span class="text-muted">Date: </span><span class="font-weight-bold">{{date('d M Y',strtotime($order->created_at))}}</span></div>
                         </div>
+                        <div class="mb-3 tar">
+                            <div class="card-title"><span class="text-muted">Delivery Status: </span><span class="font-weight-bold">@if($order->delivery_status =="") {{ "Pending" }} @else {{ ucfirst($order->delivery_status) }} @endif</span></div>
+                        </div>
+                        @if($order->delivery_status !="")
+                        <div class="mb-3 tar">
+                            <div class="card-title"><span class="text-muted">Delivery Date: </span><span class="font-weight-bold">{{date('d M Y',strtotime($order->delivery_date))}}</span></div>
+                        </div>
+                        @endif
+                        
                     </div>
                 </div>
             </div>
@@ -117,15 +126,22 @@
                                     <th class="text-right">{{$currency}} {{$order->total}}</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-right">Tax</th>
+                                    <td class="plabels">Payment Method: <p class="font-weight-semibold ml-1">
+                                            @foreach($order->payments as $pay)
+                                            <div class="pay">{{$pay->payment_type}}</div>
+                                            @endforeach</p>
+                                    </td>
+                                    <th colspan="3" class="text-right">Tax</th>
                                     <th class="text-right">{{$currency}} {{$order->tax}}</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-right">Discount</th>
+                                    <td class="plabels">Payment Status:<p class="font-weight-semibold ml-1"> {{ucwords(str_replace('_',' ',$order->payment_status))}}</p></td>
+                                    <th colspan="3" class="text-right">Discount</th>
                                     <th class="text-right">{{$currency}} {{$order->discount}}</th>
                                 </tr>
                                 <tr>
-                                    <th colspan="4" class="text-right">Shiping Charge</th>
+                                    <td class="plabels">Order Status:<p class="font-weight-semibold ml-1"> {{ucwords(str_replace('_',' ',$order->order_status))}}</p></td>
+                                    <th colspan="3" class="text-right">Shiping Charge</th>
                                     <th class="text-right">{{$currency}} {{$order->shiping_charge}}</th>
                                 </tr>
                                 <tr>

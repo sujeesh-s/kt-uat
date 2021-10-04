@@ -2,7 +2,11 @@
 <link href="{{URL::asset('admin/assets/css/datepicker.css')}}" rel="stylesheet" />
            <link href="{{URL::asset('admin/assets/plugins/fancyuploder/fancy_fileupload.css')}}" rel="stylesheet" />
 <link href="{{URL::asset('admin/assets/plugins/fileupload/css/fileupload.css')}}" rel="stylesheet" type="text/css" />
-<style>.modal-sm { max-width: 420px; } .modal-body label{ font-size: 16px; }</style>
+<link href="{{URL::asset('admin/assets/plugins/quill/quill.snow.css')}}" rel="stylesheet">
+        <link href="{{URL::asset('admin/assets/plugins/quill/quill.bubble.css')}}" rel="stylesheet">
+<style>.modal-sm { max-width: 420px; } .modal-body label{ font-size: 16px; }
+#prd_imgs .form-control.img { padding:3px;}
+</style>
 <div id="content_list">@include('admin.seller_product.list.content')</div>
 <div id="content_detail" class="row no-disp"></div>
 <div id="newAlertModal" style="display: none">   
@@ -14,7 +18,7 @@
     </div>
     <div class="modal-body">
         <div class="col-12">
-            {{Form::select('sel_seller',$sellers,'',['id'=>'sel_seller','class'=>'form-control','placeholder'=>'Select Seller'])}}
+            {{Form::select('sel_seller',$sellers,'',['id'=>'sel_seller','class'=>'form-control','placeholder'=>'Select Business Name'])}}
             <span id="sel_seller_error" class="error"></span><span id="selected_id" class="d-none"></span>
         </div>
     </div>
@@ -33,7 +37,7 @@
 <script src="{{URL::asset('admin/assets/js/form-editor.js')}}"></script>
 <!---combo tree--->
 <script src="{{URL::asset('admin/assets/plugins/combotree/comboTreePlugin.js')}}"></script>
-
+ <script src="{{URL::asset('admin/assets/plugins/quill/quill.min.js')}}"></script>
     <script>
 
     $.ajaxSetup({
@@ -81,6 +85,20 @@
                 }); return false;
             }else{ $('body #sel_seller_error').text('Select Seller'); }
         })
+        
+        $('body').on('click','.del-img', function(){
+            var id  =   this.id.replace('del-img-','');
+            $.ajax({
+                type: "POST",
+                data: {imgId :id},
+                url: '{{url("admin/delete/product/image")}}',
+                success: function (data) { 
+                    if(data == 'success'){  toastr.success('Prduct image deleted successfully!'); $('#prdImg-'+id).remove(); }
+                    else{ toastr.error('Somethng went wrong. Please try after some time.'); }
+                } 
+            });
+        });
+        
          $('body').on('click','#nav_tab_4',function(){ 
     $('.stars').stars();
         });
@@ -239,6 +257,7 @@ required: "Status field is required."
         
         $('body').on('submit','#adminForm',function(e){ 
             $('body #adminForm .error').html('');
+            $("#specification").val(JSON.stringify(new Quill('#quillEditor').getContents()));
             if($('#adminForm #option2').prop('checked') == true && $('#adminForm #admin_prd_id').val() == ''){
                 $('#adminForm #admin_prd_id').closest('div').find('.error').html('Select Admin Product'); $('#adminForm #admin_prd_id').focus(); return false;
             }else{
@@ -622,5 +641,7 @@ function build_table(){
             }
         });
     }
+   
 </script>
+
 @endsection

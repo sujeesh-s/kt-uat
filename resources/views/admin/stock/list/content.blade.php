@@ -35,11 +35,12 @@
                                                     <td><span class="d-none">{{$n}}</span></span></td>
                                                     <td>{{$row->seller->fname}}</td> 
                                                     <td>{{$row->name}}</td> 
-                                                    <td class="tar">{{$row->prdPrice->price}}</td> 
+                                                    <?php if(isset($row->prdPrice)) { $pr_sale_price = $row->prdPrice->sale_price; $pr_sale_start = $row->prdPrice->sale_start_date; $pr_sale_end = $row->prdPrice->sale_end_date; }else { $pr_sale_price = 0; $pr_sale_start = $pr_sale_end = ""; } ?>
+                                                    <td class="tar">@if(isset($row->prdPrice)) {{ $pr_price = $row->prdPrice->price}}   @else $pr_price =0;   @endif</td> 
                                                     <td class="tar">{{$row->prdStock($row->id)}}</td> 
                                                     <td class="text-center">
-                                                        {{Form::hidden('prd_name_'.$row->id,$row->name,['id'=>'prd_name_'.$row->id])}}{{Form::hidden('slr_name_'.$row->id,$row->seller->fname,['id'=>'slr_name_'.$row->id])}}{{Form::hidden('prd_price_'.$row->id,$row->prdPrice->price,['id'=>'prd_price_'.$row->id])}}
-                                                        {{Form::hidden('sale_price_'.$row->id,$row->prdPrice->sale_price,['id'=>'sale_price_'.$row->id])}}{{Form::hidden('sale_start_date_'.$row->id,$row->prdPrice->sale_start_date,['id'=>'sale_start_date_'.$row->id])}}{{Form::hidden('sale_end_date'.$row->id,$row->prdPrice->sale_end_date,['id'=>'sale_end_date_'.$row->id])}}
+                                                        {{Form::hidden('prd_name_'.$row->id,$row->name,['id'=>'prd_name_'.$row->id])}}{{Form::hidden('slr_name_'.$row->id,$row->seller->fname,['id'=>'slr_name_'.$row->id])}}{{Form::hidden('prd_price_'.$row->id,$pr_price,['id'=>'prd_price_'.$row->id])}}
+                                                        {{Form::hidden('sale_price_'.$row->id,$pr_sale_price,['id'=>'sale_price_'.$row->id])}}{{Form::hidden('sale_start_date_'.$row->id,$pr_sale_start,['id'=>'sale_start_date_'.$row->id])}}{{Form::hidden('sale_end_date'.$row->id, $pr_sale_end,['id'=>'sale_end_date_'.$row->id])}}
                                                         <button id="editForm-{{$row->id}}" data-seller="{{$row->seller->seller_id}}" data-product="{{$row->id}}" class="mr-2 btn btn-info btn-sm editForm" data-toggle="modal" data-target=".bd-example-modal"><i class="fa fa-plus mr-1"></i>Add Stock</button>
                                                         <button id="addPice-{{$row->id}}" data-seller="{{$row->seller->seller_id}}" data-product="{{$row->id}}" class="mr-2 btn btn-info btn-sm addPice" data-toggle="modal" data-target=".bd-example-modal"><i class="fa fa-plus mr-1"></i>Add Price</button>
                                                         <button id="viewForm-{{$row->id}}" class="mr-2 btn btn-success btn-sm viewForm"><i class="fa fa-eye mr-1"></i>View</button>

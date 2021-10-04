@@ -27,5 +27,6 @@ Route::post('/admin/associativeProducts', [App\Http\Controllers\Admin\SellerProd
 
 Route::get('/admin/seller/products/offer/{id}', [App\Http\Controllers\Admin\SellerProductController::class, 'specialOffer']);
 Route::post('/admin/seller/products/offer/save', [App\Http\Controllers\Admin\SellerProductController::class, 'saveOffer']);
+Route::post('/admin/delete/product/image', [App\Http\Controllers\Admin\SellerProductController::class, 'deletePrdImg']);
 
 

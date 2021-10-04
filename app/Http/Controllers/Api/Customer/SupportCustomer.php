@@ -14,6 +14,9 @@ use App\Models\Admin;
 use App\Models\CustomerInfo;
 use App\Models\SupportChatMessage;
 use App\Models\SupportChat;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
+use Intervention\Image\Facades\Image;
 use Carbon\Carbon;
 use App\Rules\Name;
 use Validator;
@@ -119,7 +122,8 @@ class SupportCustomer extends Controller
         $user_id = $user['user_id'];
         $validator=  Validator::make($request->all(),[
             'support_id'      => ['required','numeric'],
-            'message'         => ['required','string']
+            'message'         => ['required_without:image'],
+            'image'           => ['required_without:message','image','mimes:jpeg,png,jpg']
 
         ]);
         if ($validator->fails()) 
@@ -132,11 +136,39 @@ class SupportCustomer extends Controller
         $support = SupportChat::where('id',$input['support_id'])->first();
         if($support)
         {
+            $image = $request->file('image');
+            
+            if($image)
+            {
+                $msg_type='image';
+                $imgName            =   time().'.'.$image->extension();
+                $path               =   '/app/public/support_seller/'.$input['support_id'];
+                $destinationPath    =   storage_path($path.'/thumb');
+                $img                =   Image::make($image->path());  //echo storage_path().'  '. $destinationPath; die;
+                if(!file_exists($destinationPath)) { mkdir($destinationPath, 755, true);}
+                $img->resize(250, 250, function($constraint){ $constraint->aspectRatio(); })->save($destinationPath.'/'.$imgName);
+                $destinationPath    =   storage_path($path);
+                $image->move($destinationPath, $imgName);
+                $imgUpload          =   uploadFile('/'.$path,$imgName);
+
+                $image_chat =$path.'/'.$imgName;
+            //     $file=$request->file('file_data');
+            // $extention=$file->getClientOriginalExtension();
+            // $filename=time().'.'.$extention;
+            // $file->move(('storage/app/public/support_seller/'),$filename);
+            // $image_chat ='storage/app/public/support_seller/'.$filename;
+            }
+            else
+            {
+                $image_chat = '';
+                $msg_type='text';
+            }
             $data = ['support_id' => $support->id,
-                     'msg_type'   => 'text',
+                     'msg_type'   => $msg_type,
                      'message'    => $input['message'],
                      'sender_id'  => $user_id,
                      'receiver_id'=>1,
+                     'image'    => $image_chat, 
                      'sender_role_id'=>5,
                      'show_role_id'=>2,
                      'created_at'=>date("Y-m-d H:i:s"),
@@ -219,7 +251,7 @@ class SupportCustomer extends Controller
                     $from = "Admin"; $align ="left"; $me = 0;
                 }
                 if($row->msg_type       ==  'image')
-                { $message = url('storage'.$row->other_msg); }
+                { $message = config('app.storage_url').$row->image; }
                 else if($row->msg_type       ==  'emoji')
                 { $message = url('storage'.$row->other_msg); }
                 else if($row->msg_type       ==  'video')

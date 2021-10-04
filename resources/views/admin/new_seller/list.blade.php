@@ -5,7 +5,7 @@
 <div id="content_list">@include('admin.new_seller.list.content')</div>
 <div id="content_detail" class="row no-disp"></div>
 @section('js') 
- <script src="{{asset('admin/assets/js/datatable/tables/seller-datatable.js')}}"></script>
+ <script src="{{asset('admin/assets/js/datatable/tables/new_seller-datatable.js')}}"></script>
 
     <script>
 
@@ -39,8 +39,8 @@
           
             
             swal({
-                title: "Delete Confirmation",
-                text: "Are you sure you want to delete this Attribute?",
+                title: "Approve Confirmation",
+                text: "Are you sure you want to approve this Seller?",
                 // type: "input",
                 showCancelButton: true,
                 closeOnConfirm: true,

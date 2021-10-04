@@ -21,7 +21,7 @@
 								<h4 class="page-title mb-0">{{ $title }}</h4>
 								<ol class="breadcrumb">
 									<li class="breadcrumb-item"><a href="#"><i class="fe fe-grid mr-2 fs-14"></i>Product Management</a></li>
-									<li class="breadcrumb-item"><a href="{{ url('shocking-sales')}}"><i class="fe fe-grid mr-2 fs-14"></i>Shocking Sale</a></li>
+									<li class="breadcrumb-item"><a href="{{ url('admin/shocking-sales')}}"><i class="fe fe-grid mr-2 fs-14"></i>Shocking Sale</a></li>
 									
 									<li class="breadcrumb-item active" aria-current="page"><a href="#">{{ $title }}</a></li>
 								</ol>

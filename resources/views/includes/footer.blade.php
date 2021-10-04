@@ -3,7 +3,7 @@
 				<div class="container">
 					<div class="row align-items-center flex-row-reverse">
 						<div class="col-md-12 col-sm-12 text-center">
-							Copyright &copy; {{date('Y')}}  <a href="{{url('/admin' )}}">Kangtao</a>. Designed by <a href="https://synuos.com/" target="_blank">Synous</a> All rights reserved.
+							{!! config('settings.copyright') !!}
 						</div>
 					</div>
 				</div>

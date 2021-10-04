@@ -197,6 +197,9 @@ class SellerEarningController extends Controller{
         $data['title']              =   'Seller Earnings';
         $data['menuGroup']          =   'sellerGroup';
         $data['menu']               =   'earning';
+        $data['sellerId']           =   '';
+        $data['sellers']            =   getDropdownData($this->getSalesSellers(),'seller_id','fname');
+        $data['seller']             =   '';
         if($post->page              ==  'earning'){ 
             $data['earnings']       =   SalesOrder::where('payment_status','success')->orderBy('id','desc')->get();
         }else{ $data['settlements'] =   Settlement::where('is_deleted',0)->groupBy('seller_id')->get(); }

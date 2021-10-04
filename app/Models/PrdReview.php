@@ -10,7 +10,7 @@ class PrdReview extends Model
 {
     use HasFactory;
     protected $table = 'prd_review';
-    protected $fillable = ['prd_id','user_id','rating','comment','image','is_active','is_deleted','created_at','updated_at'];
+    protected $fillable = ['prd_id','user_id','rating','headline','comment','image','is_active','is_deleted','created_at','updated_at'];
     public function customerinfo($user_id){ return customer\CustomerInfo::where('user_id',$user_id)->first(); }
      public function product(){ return $this->belongsTo(Product ::class, 'prd_id'); }
 
