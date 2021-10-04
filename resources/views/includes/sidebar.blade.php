@@ -18,7 +18,7 @@
                         <div class="user-info">
                                 <h5 class=" mb-1">{{auth()->user()->fname.' '.auth()->user()->lname}} <i class="ion-checkmark-circled  text-success fs-12"></i></h5>
                                 <span class="text-muted app-sidebar__user-name text-sm">{{roleData()->usr_role_name}}</span><br>
-                                <span class="text-muted app-sidebar__user-name text-sm">{{ $version }}</span>
+                                <span class="text-muted app-sidebar__user-name text-sm">v{{ $version }}</span>
                         </div> 
                 </div>
                 

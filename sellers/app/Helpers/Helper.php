@@ -9,7 +9,7 @@ use App\Models\Country;
 use App\Models\Modules;
 use App\Models\Staff;
 use App\Models\StaffInfo;
-
+use App\Models\AppVersion;
 if (!function_exists('geSiteName')) {
 
     function geSiteName() {
@@ -240,6 +240,17 @@ if (!function_exists('sidebarMenu')) {
         }
         
         
+        
+    }
+}
+if (!function_exists('appVersion')) {
+    function appVersion($type){ 
+    if($type =="admin") {
+        return AppVersion::where('id', 1)->first()->admin_web; 
+    }
+    else{
+        return AppVersion::where('id', 1)->first()->admin_web; 
+    }
         
     }
 }
