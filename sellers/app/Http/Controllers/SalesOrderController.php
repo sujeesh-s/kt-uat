@@ -111,12 +111,64 @@ class SalesOrderController extends Controller
             if($post->value         ==  'accepted'){ $cnl = ['order_status'=>'cancelled','cancel_process' => 2]; }
             else if($post->value    ==  'rejected'){ $cnl['cancel_process'] = 3; $this->addCancelResponse($post->id,$post->reply); }
             $update                 =   SalesOrder::where('id',$cancelRec->sales_id)->update($cnl);
+            if($update)
+            {
+                $sale    = SalesOrder::where('id',$cancelRec->sales_id)->first();
+                if($post->value         ==  'accepted')
+                {
+                    $from    = auth()->user()->id; 
+                    $utype   = 2;
+                    $to      = 1; 
+                    $ntype   = 'cancel_refund';
+                    $title   = 'Cancel Refund';
+                    $desc    = 'New cancel refund request from '.sellerData()->fname.' for the order '.$sale->order_id;
+                    $refId   =  $sale->id;
+                    $reflink = 'sales/orders/ref_reqs';
+                    $notify  = 'admin';
+                    addNotification($from,$utype,$to,$ntype,$title,$desc,$refId,$reflink,$notify);
+                }
+                
+                    $cfrom   = auth()->user()->id; 
+                    $cutype  = 2;
+                    $cto     = $sale->cust_id;
+                    $cntype  = 'cancel_order';
+                    $ctitle  = 'Cancel Order';
+                    if($post->value         ==  'accepted')
+                    {
+                         $cdesc   = 'You cancel order has been approved by seller';
+                    }
+                    else
+                    {
+                         $cdesc   = 'You cancel order has been rejected by seller';
+                    }
+                    $crefId  = $cancelRec->id;
+                    $creflink = 'customer/past/cancel/list/seller';
+                    $cnotify  = 'customer';
+                    addNotification($cfrom,$cutype,$cto,$cntype,$ctitle,$cdesc,$crefId,$creflink,$cnotify);
+            }
             $orders                 =   SalesOrderCancel::where('seller_id',auth()->user()->id);
         }else{ 
             $update                 =   SalesOrder::where('id',$post->id)->update([$post->field => $post->value]);
             $cInsId                 =   SalesOrderCancel::create(['sales_id'=>$post->id,'seller_id'=>auth()->user()->id,'created_by'=>auth()->user()->id,'role_id'=>auth()->user()->role_id])->id;
                                         $this->addCancelNote($cInsId,$post->title,$post->desc);
             $orders                 =   SalesOrder::where('seller_id',auth()->user()->id); $salesId = $post->id;
+            if($cInsId)
+            {
+                if($post->value         ==  'cancel_initiated')
+                {
+                    $cdata = SalesOrder::where('id',$post->id)->first();
+                    $from   = auth()->user()->id; 
+                    $utype  = 2;
+                    $to     = $cdata->cust_id;
+                    $ntype  = 'cancel_order_request';
+                    $title  = 'Cancel Order request';
+                    $desc   = 'You have a new cancel order request from '.sellerData()->fname;
+                    $refId  = $cInsId;
+                    $reflink = 'cancel/request/list/seller';
+                    $notify  = 'customer';
+                    addNotification($from,$utype,$to,$ntype,$title,$desc,$refId,$reflink,$notify);
+                }
+            }
         }
         $stHistory                  =   ['sales_id'=>$salesId,'status'=>$post->value,'created_by'=>auth()->user()->id,'role_id'=>auth()->user()->role_id];
         $stHistory['description']   =   $post->desc;    SalesOrderStatusHistory::create($stHistory);
