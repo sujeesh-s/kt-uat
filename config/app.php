@@ -52,12 +52,12 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'https://kt.estrradoweb.com'),
+    'url' => env('APP_URL', 'https://uat-kt.estrradoweb.com'),
 
-    'asset_url' => env('ASSET_URL', 'https://kt.estrradoweb.com/public'),
+    'asset_url' => env('ASSET_URL', 'https://uat-kt.estrradoweb.com/public'),
     
-    'upload_url' => env('UPLOAD_URL', 'https://kt.estrradoweb.com/uploads/api'),
-    'storage_url' => env('STORAGE_URL', 'https://kt.estrradoweb.com/uploads/storage'),
+    'upload_url' => env('UPLOAD_URL', 'https://uat-kt.estrradoweb.com/uploads/api'),
+    'storage_url' => env('STORAGE_URL', 'https://uat-kt.estrradoweb.com/uploads/storage'),
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

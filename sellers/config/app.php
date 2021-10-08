@@ -52,12 +52,12 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'https://qa-kt.estrradoweb.com/sellers'),
+    'url' => env('APP_URL', 'https://uat-kt.estrradoweb.com/sellers'),
 
-    'asset_url' => env('ASSET_URL', 'https://qa-kt.estrradoweb.com/sellers/public'),
+    'asset_url' => env('ASSET_URL', 'https://uat-kt.estrradoweb.com/sellers/public'),
     
-    'upload_url' => env('UPLOAD_URL', 'https://qa-kt.estrradoweb.com/uploads/api'),
-    'storage_url' => env('STORAGE_URL', 'https://qa-kt.estrradoweb.com/uploads/storage'),
+    'upload_url' => env('UPLOAD_URL', 'https://uat-kt.estrradoweb.com/uploads/api'),
+    'storage_url' => env('STORAGE_URL', 'https://uat-kt.estrradoweb.com/uploads/storage'),
 
     /*
     |--------------------------------------------------------------------------
