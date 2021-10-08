@@ -239,13 +239,24 @@ function loadChat (id){
       }
    }
    
-   $("#myInput").on("keyup", function() {
-  var value = this.value.toLowerCase().trim();
-  $(".media-contact-name span").show().filter(function() {
-    return $(this).text().toLowerCase().trim().indexOf(value) == -1;
-  }).hide();
-});
+//   $("#myInput").on("keyup", function() {
+//   var value = this.value.toLowerCase().trim();
+//   $(".media-contact-name span").show().filter(function() {
+//     return $(this).text().toLowerCase().trim().indexOf(value) == -1;
+//   }).hide();
+// });
 
+$("#myInput").on('keyup', function(){
+      var value = $(this).val().toLowerCase();
+      $("#ChatList span").each(function () {
+         if ($(this).text().toLowerCase().search(value) > -1) {
+            $(this).show();
+            $(this).prev('.sspan').last().show();
+         } else {
+            $(this).hide();
+         }
+      });
+   })
 function imgchange(er){   
     
         var img = $('<img/>', {

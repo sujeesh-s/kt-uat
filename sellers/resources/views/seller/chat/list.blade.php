@@ -24,7 +24,7 @@
 														<input type="hidden" name="chat_categories" id="chat_categories" class="chat_categories" value="{{$chat_id_latest}}">
 														<div class="media selected">
 														@else
-														<div class="media new">
+														<div class="media new" id="search_media">
 														@endif	
 														
 															<div class="main-img-user">
@@ -35,7 +35,7 @@
 																@endif
 															</div>
 															<div class="media-body" id="media-body">
-																<div class="media-contact-name">
+																<div class="media-contact-name" id="media-contact-name">
 																	<span class=".sspan">{{$row['cust_name']}}</span> 
 																	<span>{{$row['last_msg_on']}}</span>
 																</div>
