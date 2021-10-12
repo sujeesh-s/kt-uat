@@ -1,11 +1,11 @@
 $(document).ready(function () {
 
-    $(".adminlist tfoot th").each(function () {
+    $(".order-table tfoot th").each(function () {
         var title = $(this).text();
         $(this).html('<input type="text" placeholder="' + title + '" />');
     });
 
-    var table = $(".adminlist").DataTable({
+    var table = $(".order-table").DataTable({
         pageLength: 10,
         rowReorder: false,
         colReorder: true,
@@ -30,7 +30,7 @@ $(document).ready(function () {
         },
         orderMulti: false,
         dom: "Blfrtip",
-        stateSave: false,
+        stateSave: true,
         order: [[0, "asc"]],
         lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
         buttons: [
@@ -48,9 +48,9 @@ $(document).ready(function () {
             {
                 extend: "excelHtml5",
                 text: '<i class="fa fa-file-excel-o"></i>Excel',
-                title: "Kangtao - Admins",
+                title: "Kangtao - Customer Order History",
                 titleAttr: "Export to Excel",
-                filename: "Kangtao_Admins",
+                filename: "Kangtao_Customer_Order_History",
                 exportOptions: {
                     columns: ":visible :not(.notexport)",
                     search: "applied",
@@ -77,17 +77,17 @@ $(document).ready(function () {
         },
         language: {
             decimal: "",
-            emptyTable: "No admins found",
-            info: "Showing _START_ to _END_ of _TOTAL_ admins",
-            infoEmpty: "Showing 0 to 0 of 0 admins",
-            infoFiltered: "(filtered from _MAX_ total admins)",
+            emptyTable: "No Orders found",
+            info: "Showing _START_ to _END_ of _TOTAL_ orders",
+            infoEmpty: "Showing 0 to 0 of 0 orders",
+            infoFiltered: "(filtered from _MAX_ total orders)",
             infoPostFix: "",
             thousands: ",",
-            lengthMenu: "Show _MENU_ admins",
+            lengthMenu: "Show _MENU_ orders",
             loadingRecords: "Loading...",
             processing: "Processing...",
             search: "Search:",
-            zeroRecords: "No matching admins found",
+            zeroRecords: "No matching orders found",
             paginate: {
                 first: "First",
                 last: "Last",
@@ -107,7 +107,8 @@ $(document).ready(function () {
             }
         }
     });
-
+// table.column(4).visible(false);
+// table.column(5).visible(false);
     table.columns().every(function () {
         var that = this;
 
@@ -117,6 +118,7 @@ $(document).ready(function () {
         //     }
         // });
     });
+
     jQuery("#filterSel").on( 'change', function () {
                           table.column( 6 )
                     .search( "^" + $(this).val(), true, false, true )
